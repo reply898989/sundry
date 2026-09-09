@@ -178,6 +178,22 @@ private final class FanControlController {
         }
     }
 
+    /// Battery charge inhibit. Deliberately stateless and outside the fan
+    /// ownership/heartbeat machinery above: unlike a cooling session, there is
+    /// nothing to restore if the caller disconnects mid-charge — the app
+    /// re-asserts the correct state on every poll, and this call is a single
+    /// idempotent write either way.
+    func setChargeInhibited(_ inhibited: Bool, reply: @escaping (Data) -> Void) {
+        queue.async {
+            let response = ChargeInhibitResponse(
+                succeeded: BatteryChargeControl.isSupported
+                    ? BatteryChargeControl.setInhibited(inhibited) : false,
+                supported: BatteryChargeControl.isSupported)
+            reply(ChargeInhibitIPC.encode(response))
+            self.scheduleExitIfIdle()
+        }
+    }
+
     func shutdown(completion: @escaping (Bool) -> Void) {
         queue.async {
             guard self.isCooling || self.isRecovering || self.ownership.isHeld else {
@@ -551,6 +567,10 @@ private final class FanControlSession: NSObject, FanControlXPCProtocol {
 
     func restoreAutomatic(withReply reply: @escaping (Data) -> Void) {
         controller.restore(reply: reply)
+    }
+
+    func setChargeInhibited(_ inhibited: Bool, withReply reply: @escaping (Data) -> Void) {
+        controller.setChargeInhibited(inhibited, reply: reply)
     }
 }
 

@@ -40,6 +40,26 @@ makes redistributing it permitted.
 - **Added an Xcode project.** Upstream builds through `build.sh`;
   `Sundry.xcodeproj` produces the same bundle from Xcode. See
   [docs/XCODE.md](docs/XCODE.md).
+- **Six features upstream does not have**, wired into the existing Features
+  hub with the same install/uninstall, localization and Settings-search
+  conventions as everything else:
+  - **Dark mode schedule** — switches light and dark mode at two times you
+    choose. `DarkModeScheduleService`.
+  - **Window layout presets** — save a named window arrangement, restore
+    every window in it with one click. `WindowLayoutPresetsService`.
+  - **Window pin** — keeps a chosen window above the others on its Space,
+    using only public Accessibility API (see the file for why no private
+    window-level API is used). `WindowPinService`.
+  - **Focus timer** — a work/break countdown in the menu bar with a
+    notification at each transition. `FocusTimerService`.
+  - **Menu bar overflow** — tucks Sundry's own metric readouts behind a
+    chevron; it only ever touches items Sundry created, never another app's.
+    `MenuBarOverflowService`.
+  - **Battery charge limit** *(experimental, off by default)* — stops
+    charging at a percentage you choose, through the same privileged helper
+    Fan Control already installs, writing the SMC's `CH0B` key (the same one
+    several open-source charge-limit tools use). Gated behind an explicit
+    confirmation dialog describing exactly what it does. `BatteryChargeLimitService`.
 
 ## Credit
 

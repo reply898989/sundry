@@ -3597,12 +3597,15 @@ struct MetricsTests {
                "update intro navigates back without closing")
         expect(SupportUpdateIntroStep.allCases == [.support, .social],
                "update intro page indicators follow the navigation order")
-        expect(AppInfo.discordURL.absoluteString == "https://discord.gg/M6BwWH4BJp",
-               "the community action uses the permanent Discord invitation")
-        expect(AppInfo.coffeeURL.absoluteString == "https://buymeacoffee.com/sundry",
-               "financial support uses Buy Me a Coffee")
-        expect(AppInfo.socialURL.absoluteString == "https://x.com/sundry",
-               "social previews keep the official X profile")
+        // This fork ships no community or funding accounts of its own (see
+        // NOTICE.md): every button that would open one hides itself while
+        // the URL stays nil, rather than pointing at upstream's accounts.
+        expect(AppInfo.discordURL == nil,
+               "no Discord invitation ships until this fork has its own community")
+        expect(AppInfo.coffeeURL == nil,
+               "no funding link ships until this fork has its own account")
+        expect(AppInfo.socialURL == nil,
+               "no social link ships until this fork has its own account")
         // AppInfo.version falls back to "dev" in this bare harness, so read
         // the plist the shipped app will actually carry. The pin is a
         // per-release decision: this check fails on every version bump so the
@@ -14556,20 +14559,24 @@ struct MetricsTests {
 
         // MARK: Features hub catalog
 
-        expect(AppFeature.allCases.count == 57, "feature catalog has 57 features")
+        // This fork adds six features upstream does not have (see NOTICE.md):
+        // windowLayoutPresets, windowPin, darkModeSchedule, batteryChargeLimit,
+        // focusTimer, menuBarOverflow. 57 upstream + 6 = 63.
+        expect(AppFeature.allCases.count == 63, "feature catalog has 63 features")
         expect(Set(AppFeature.allCases.map(\.rawValue)).count == AppFeature.allCases.count,
                "feature ids are unique")
         expect(AppFeature.allCases.map(\.rawValue) == [
             "switcher", "dockPreview", "dockClick", "windowMaximizer", "windowLayout", "autoQuit",
+            "windowLayoutPresets", "windowPin",
             "scrollInverter", "focusFollowsMouse", "smoothScroll", "mouseAcceleration", "mouseNavigation", "mouseButtonShortcuts", "middleClick",
             "mouseClickDebounce", "keyboardDebounce", "textSnippets", "superKey", "quitWindowProtection",
             "clipboardHistory", "pastePlain", "finderCutPaste", "finderRename", "shelf", "urlCleaner",
             "diskImageInstaller",
             "mixer", "soundOutputSwitcher", "micMute", "musicBlock",
-            "keepAwake", "brightness", "extraBrightness", "bluetoothSleep",
+            "keepAwake", "brightness", "extraBrightness", "bluetoothSleep", "darkModeSchedule", "batteryChargeLimit",
             "quickLauncher", "quickToggles", "colorPicker", "screenOCR", "cleaningMode", "mediaTools",
             "cleaner", "uninstaller", "homebrew", "appUpdates", "screenshot", "cameraPreview",
-            "radialMenu", "scratchpad", "commandBar", "screenRecorder", "killProcess",
+            "radialMenu", "scratchpad", "commandBar", "screenRecorder", "killProcess", "focusTimer", "menuBarOverflow",
             "monitorCPU", "monitorGPU", "monitorMemory", "monitorNetwork", "monitorDisk", "monitorPower",
             "fanControl",
         ], "feature ids are stable (they persist inside availability keys)")
@@ -15251,8 +15258,10 @@ struct MetricsTests {
                "Window Layout does not poll permissions when every snap zone is off")
 
         expect(activeSet(.accessibility)
-                == [.windowLayout, .cleaningMode, .commandBar, .screenRecorder],
+                == [.windowLayout, .windowLayoutPresets, .cleaningMode, .commandBar, .screenRecorder],
                "with nothing enabled only on-demand features use accessibility")
+        expect(activeSet(.accessibility, on: [DefaultsKey.windowPinEnabled]).contains(.windowPin),
+               "window pin uses accessibility once its own toggle is on")
         expect(activeSet(.accessibility, on: [DefaultsKey.scrollInverterEnabled]).contains(.scrollInverter),
                "an enabled feature counts as using its permission")
         expect(activeSet(.accessibility, on: [DefaultsKey.scrollInverterHorizontalEnabled])
@@ -15312,39 +15321,41 @@ struct MetricsTests {
                                                     DefaultsKey.dockClickCycleWindows],
                "the Dock click feature tracks every action that can keep its shared tap alive")
 
-        expect(activeSet(.notifications) == [],
-               "no alerts and no schedule means notifications are unused")
-        expect(activeSet(.notifications, on: [DefaultsKey.monitorAlertCPUTemperature]) == [.monitorCPU],
+        expect(activeSet(.notifications) == [.focusTimer],
+               "no alerts and no schedule means only the on-demand focus timer uses notifications")
+        expect(activeSet(.notifications, on: [DefaultsKey.monitorAlertCPUTemperature])
+                == [.monitorCPU, .focusTimer],
                "a CPU temperature alert marks the CPU monitor as notifying")
-        expect(activeSet(.notifications, on: [DefaultsKey.monitorAlertBatteryTemperature]) == [.monitorPower],
+        expect(activeSet(.notifications, on: [DefaultsKey.monitorAlertBatteryTemperature])
+                == [.monitorPower, .focusTimer],
                "a battery temperature alert marks the power monitor as notifying")
         expect(activeSet(.notifications,
                          available: Set(AppFeature.allCases).subtracting([.monitorCPU]),
-                         on: [DefaultsKey.monitorAlertCPU]) == [],
+                         on: [DefaultsKey.monitorAlertCPU]) == [.focusTimer],
                "an alert whose metric is unavailable does not notify")
         expect(activeSet(.notifications, on: [DefaultsKey.cleanerScheduleNotify],
-                         strings: [DefaultsKey.cleanerScheduleFrequency: "weekly"]) == [.cleaner],
+                         strings: [DefaultsKey.cleanerScheduleFrequency: "weekly"]) == [.cleaner, .focusTimer],
                "a scheduled cleaner with notice enabled uses notifications")
         expect(activeSet(.notifications, on: [DefaultsKey.cleanerScheduleNotify],
-                         strings: [DefaultsKey.cleanerScheduleFrequency: "off"]) == [],
+                         strings: [DefaultsKey.cleanerScheduleFrequency: "off"]) == [.focusTimer],
                "an unscheduled cleaner does not use notifications")
         expect(activeSet(.notifications,
                          on: [DefaultsKey.whatsAppDownloadsAutomaticEnabled,
-                              DefaultsKey.whatsAppDownloadsNotify]) == [],
+                              DefaultsKey.whatsAppDownloadsNotify]) == [.focusTimer],
                "WhatsApp cleanup notifications stay unused until that cleaner is turned on")
         expect(activeSet(.notifications,
                          on: [DefaultsKey.whatsAppDownloadsEnabled,
                               DefaultsKey.whatsAppDownloadsAutomaticEnabled,
-                              DefaultsKey.whatsAppDownloadsNotify]) == [.cleaner],
+                              DefaultsKey.whatsAppDownloadsNotify]) == [.cleaner, .focusTimer],
                "WhatsApp cleanup only uses notifications for an opted-in automatic summary")
         expect(activeSet(.notifications,
                          on: [DefaultsKey.whatsAppOrganizerEnabled,
-                              DefaultsKey.whatsAppDownloadsNotify]) == [],
+                              DefaultsKey.whatsAppDownloadsNotify]) == [.focusTimer],
                "the experimental WhatsApp organizer stays silent until that cleaner is turned on")
         expect(activeSet(.notifications,
                          on: [DefaultsKey.whatsAppDownloadsEnabled,
                               DefaultsKey.whatsAppOrganizerEnabled,
-                              DefaultsKey.whatsAppDownloadsNotify]) == [.cleaner],
+                              DefaultsKey.whatsAppDownloadsNotify]) == [.cleaner, .focusTimer],
                "the experimental WhatsApp organizer can offer an undo notification")
         expect(activeSet(.filesAndFolders) == [],
                "WhatsApp Downloads folder access stays unused until that cleaner is turned on")
@@ -15925,8 +15936,10 @@ struct MetricsTests {
                "the mouse page hides only with all eight mouse features off")
         expect(!pageVisible(.energy, available: allFeatures.subtracting([.keepAwake, .brightness,
                                                                          .extraBrightness,
-                                                                         .bluetoothSleep])),
-               "energy hides when all four of its features are off")
+                                                                         .bluetoothSleep,
+                                                                         .darkModeSchedule,
+                                                                         .batteryChargeLimit])),
+               "energy hides when all six of its features are off")
         expect(pageVisible(.energy, available: [.extraBrightness]), "XDR alone keeps the energy page")
         expect(pageVisible(.energy, available: [.brightness]),
                "brightness control alone keeps the energy page")
@@ -19027,20 +19040,25 @@ struct MetricsTests {
                "the recent captures shortcut defaults to control option command H")
         expect(ScreenshotShareDuration.allCases.map(\.rawValue) == [3_600, 21_600, 86_400],
                "temporary links allow only one, six or twenty-four hours")
+        // This fork ships no default sharing server (see NOTICE.md): the
+        // fallback is nil, and any build — not only a Developer build, since
+        // there is no longer a production endpoint upstream's fallback was
+        // gated on — can turn sharing on by pointing it at an operator's own
+        // HTTPS endpoint.
+        expect(ScreenshotSharingSupport.productionEndpoint == nil,
+               "this fork ships no default screenshot-sharing server")
         let testShareEndpoint = ScreenshotSharingSupport.endpoint(
-            bundleIdentifier: ScreenshotSharingSupport.developerBundleIdentifier,
+            bundleIdentifier: "com.sundry.utils",
             developerOverride: "https://test.example/")
-        expect(testShareEndpoint.absoluteString == "https://test.example"
+        expect(testShareEndpoint?.absoluteString == "https://test.example"
                 && ScreenshotSharingSupport.endpoint(
                     bundleIdentifier: "com.sundry.utils",
-                    developerOverride: "https://test.example").absoluteString
-                    == ScreenshotSharingSupport.productionEndpoint.absoluteString
-                && ScreenshotSharingSupport.endpoint(
-                    bundleIdentifier: ScreenshotSharingSupport.developerBundleIdentifier,
-                    developerOverride: "http://test.example")
-                    == ScreenshotSharingSupport.productionEndpoint,
-               "only the Developer build accepts a valid HTTPS test endpoint")
-        expect(ScreenshotSharingSupport.uploadURL(endpoint: testShareEndpoint,
+                    developerOverride: "http://test.example") == nil
+                && ScreenshotSharingSupport.endpoint(bundleIdentifier: "com.sundry.utils",
+                                                     developerOverride: nil) == nil,
+               "any build accepts a valid HTTPS test endpoint; a non-HTTPS override or no "
+                + "override falls back to the (nil) production endpoint")
+        expect(ScreenshotSharingSupport.uploadURL(endpoint: testShareEndpoint!,
                                                   duration: .sixHours)?.absoluteString
                 == "https://test.example/v1/screenshots?expiresIn=21600",
                "sharing builds the fixed upload route and expiration query")
@@ -19051,7 +19069,7 @@ struct MetricsTests {
             expiresAt: "1970-01-01T01:16:40.125Z",
             deleteToken: String(repeating: "b", count: 43))
         expect(ScreenshotSharingSupport.record(response: shareResponse,
-                                                endpoint: testShareEndpoint,
+                                                endpoint: testShareEndpoint!,
                                                 now: shareNow)?.url.absoluteString
                 == "https://test.example/s/\(String(repeating: "a", count: 32))",
                "a valid service response becomes an owner-held link record")
@@ -19061,7 +19079,7 @@ struct MetricsTests {
             expiresAt: "1970-01-01T01:16:40.125Z",
             deleteToken: "short")
         expect(ScreenshotSharingSupport.record(response: forgedShareResponse,
-                                                endpoint: testShareEndpoint,
+                                                endpoint: testShareEndpoint!,
                                                 now: shareNow) == nil,
                "guessable ids and short deletion tokens are rejected")
         expect(Defaults.registeredDefaults[DefaultsKey.panelUtilityScreenshot] as? Bool == true,
@@ -23017,13 +23035,19 @@ struct MetricsTests {
 
         expect(RecordingShareDuration.allCases.map(\.rawValue) == [3_600, 21_600],
                "recording links allow only one or six hours")
+        // This fork ships no default sharing server (see NOTICE.md): the
+        // fallback is nil, and any build can turn sharing on with an
+        // operator's own HTTPS endpoint override.
+        expect(RecordingSharingSupport.productionEndpoint == nil,
+               "this fork ships no default recording-sharing server")
         let recordingShareEndpoint = RecordingSharingSupport.endpoint(
-            bundleIdentifier: RecordingSharingSupport.developerBundleIdentifier,
+            bundleIdentifier: "com.sundry.utils",
             developerOverride: "https://test.example/")
-        expect(RecordingSharingSupport.uploadURL(endpoint: recordingShareEndpoint,
-                                                 duration: .sixHours)?.absoluteString
+        expect(recordingShareEndpoint != nil
+                && RecordingSharingSupport.uploadURL(endpoint: recordingShareEndpoint!,
+                                                     duration: .sixHours)?.absoluteString
                 == "https://test.example/v1/recordings?expiresIn=21600",
-               "recording sharing uses its fixed endpoint and expiration query")
+               "recording sharing uses its overridden endpoint and expiration query")
         let recordingID = String(repeating: "r", count: 32)
         let recordingResponse = RecordingShareResponse(
             id: recordingID,
@@ -23031,7 +23055,7 @@ struct MetricsTests {
             expiresAt: "1970-01-01T06:16:40.000Z",
             deleteToken: String(repeating: "t", count: 43))
         expect(RecordingSharingSupport.record(response: recordingResponse,
-                                              endpoint: recordingShareEndpoint,
+                                              endpoint: recordingShareEndpoint!,
                                               now: Date(timeIntervalSince1970: 1_000))?.id
                 == recordingID,
                "a valid six-hour recording response becomes an owner-held record")

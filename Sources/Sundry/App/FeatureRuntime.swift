@@ -235,6 +235,14 @@ final class FeatureRuntime: ObservableObject {
         .brightness: { BrightnessService.shared.syncWithPreferences() },
         .extraBrightness: { ExtraBrightnessService.shared.syncWithPreferences() },
         .bluetoothSleep: { BluetoothSleepService.shared.syncWithPreferences() },
+        .darkModeSchedule: { DarkModeScheduleService.shared.syncWithPreferences() },
+        .windowPin: { WindowPinService.shared.syncWithPreferences() },
+        .focusTimer: { FocusTimerService.shared.syncWithPreferences() },
+        .menuBarOverflow: { MenuBarOverflowService.shared.syncWithPreferences() },
+        .batteryChargeLimit: {
+            BatteryChargeLimitService.shared.syncWithPreferences()
+            FanControlService.shared.syncWithPreferences()
+        },
         .quickLauncher: { QuickLauncherService.shared.syncWithPreferences() },
         .colorPicker: {
             ScreenCaptureService.shared.syncWithPreferences()

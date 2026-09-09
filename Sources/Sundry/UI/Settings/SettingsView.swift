@@ -498,6 +498,10 @@ struct GeneralSettings: View {
                 }
                 .settingsSectionAnchor(.musicBlocking)
             }
+            if AppFeature.menuBarOverflow.isAvailable {
+                MenuBarOverflowSection()
+                    .settingsSectionAnchor(.menuBarOverflow)
+            }
             Section(feedbackStrings.sectionTitle) {
                 Button {
                     appDelegate()?.openFeedbackWindow()
@@ -629,6 +633,25 @@ struct UpdatesView: View {
 
 // MARK: - Energy
 
+private extension Binding<Int> {
+    /// Views minutes-since-midnight (DarkModeSchedule's storage) as a Date, so
+    /// a plain `DatePicker(.hourAndMinute)` can edit it. The calendar day is
+    /// irrelevant and dropped on write; only hour and minute round-trip.
+    var asTimeOfDay: Binding<Date> {
+        Binding<Date>(
+            get: {
+                Calendar.current.date(bySettingHour: wrappedValue / 60,
+                                      minute: wrappedValue % 60, second: 0, of: Date())
+                    ?? Date()
+            },
+            set: { newDate in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                wrappedValue = (components.hour ?? 0) * 60 + (components.minute ?? 0)
+            }
+        )
+    }
+}
+
 struct EnergySettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -636,6 +659,9 @@ struct EnergySettings: View {
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var extraBrightness = ExtraBrightnessService.shared
     @ObservedObject private var brightness = BrightnessService.shared
+    @ObservedObject private var darkModeSchedule = DarkModeScheduleService.shared
+    @ObservedObject private var batteryChargeLimit = BatteryChargeLimitService.shared
+    @State private var showBatteryChargeLimitConfirm = false
     @AppStorage(DefaultsKey.brightnessControlEnabled) private var brightnessEnabled = false
     @AppStorage(DefaultsKey.brightnessKeysEnabled) private var brightnessKeysEnabled = false
     @AppStorage(DefaultsKey.brightnessOSDEnabled) private var brightnessOSDEnabled = false
@@ -643,6 +669,11 @@ struct EnergySettings: View {
     @AppStorage(DefaultsKey.extraBrightnessLevel) private var extraBrightnessLevel = 100
     @AppStorage(DefaultsKey.bluetoothSleepEnabled) private var bluetoothSleepEnabled = false
     @AppStorage(DefaultsKey.bluetoothSleepRestoreOnWake) private var bluetoothSleepRestoreOnWake = true
+    @AppStorage(DefaultsKey.darkModeScheduleEnabled) private var darkModeScheduleEnabled = false
+    @AppStorage(DefaultsKey.darkModeScheduleLightMinutes) private var darkModeScheduleLightMinutes = 8 * 60
+    @AppStorage(DefaultsKey.darkModeScheduleDarkMinutes) private var darkModeScheduleDarkMinutes = 20 * 60
+    @AppStorage(DefaultsKey.batteryChargeLimitEnabled) private var batteryChargeLimitEnabled = false
+    @AppStorage(DefaultsKey.batteryChargeLimitPercent) private var batteryChargeLimitPercent = 80
     @AppStorage(DefaultsKey.defaultDuration) private var defaultDuration = 0
     @AppStorage(DefaultsKey.batteryLimit) private var batteryLimit = 10
     @AppStorage(DefaultsKey.keepAwakeAutoStart) private var keepAwakeAutoStart = false
@@ -826,6 +857,78 @@ struct EnergySettings: View {
                     }
                 }
                 .settingsSectionAnchor(.bluetoothSleep)
+            }
+            if AppFeature.darkModeSchedule.isAvailable {
+                let strings = FeatureStrings.darkModeSchedule(l10n.language)
+                Section(strings.pageTitle) {
+                    SettingsToggleWithCaption(title: strings.enable,
+                                              caption: strings.caption,
+                                              isOn: $darkModeScheduleEnabled)
+                        .onChange(of: darkModeScheduleEnabled) { _, _ in
+                            DarkModeScheduleService.shared.syncWithPreferences()
+                        }
+                    if darkModeScheduleEnabled {
+                        DatePicker(strings.lightLabel, selection: $darkModeScheduleLightMinutes.asTimeOfDay,
+                                  displayedComponents: .hourAndMinute)
+                            .onChange(of: darkModeScheduleLightMinutes) { _, _ in
+                                DarkModeScheduleService.shared.syncWithPreferences()
+                            }
+                        DatePicker(strings.darkLabel, selection: $darkModeScheduleDarkMinutes.asTimeOfDay,
+                                  displayedComponents: .hourAndMinute)
+                            .onChange(of: darkModeScheduleDarkMinutes) { _, _ in
+                                DarkModeScheduleService.shared.syncWithPreferences()
+                            }
+                        if let nextFire = darkModeSchedule.nextFire {
+                            SettingsCaptionText(String(format: strings.nextChangeFormat,
+                                                       nextFire.formatted(date: .omitted, time: .shortened)))
+                        }
+                    }
+                }
+                .settingsSectionAnchor(.darkModeSchedule)
+            }
+            if AppFeature.batteryChargeLimit.isAvailable {
+                let strings = FeatureStrings.batteryChargeLimit(l10n.language)
+                Section {
+                    Label(strings.experimentalBadge, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.orange)
+                    SettingsCaptionText(strings.experimentalWarning)
+                    Toggle(strings.enable, isOn: Binding(
+                        get: { batteryChargeLimitEnabled },
+                        set: { newValue in
+                            if newValue {
+                                showBatteryChargeLimitConfirm = true
+                            } else {
+                                batteryChargeLimitEnabled = false
+                                BatteryChargeLimitService.shared.syncWithPreferences()
+                            }
+                        }))
+                        .alert(strings.confirmTitle, isPresented: $showBatteryChargeLimitConfirm) {
+                            Button(strings.cancelButton, role: .cancel) {}
+                            Button(strings.confirmEnableButton) {
+                                batteryChargeLimitEnabled = true
+                                BatteryChargeLimitService.shared.syncWithPreferences()
+                            }
+                        } message: {
+                            Text(strings.confirmMessage)
+                        }
+                    if batteryChargeLimitEnabled {
+                        if batteryChargeLimit.isSupported != false {
+                            Stepper(value: $batteryChargeLimitPercent, in: 50...100, step: 5) {
+                                Text(strings.limitLabel + " \(batteryChargeLimitPercent)%")
+                            }
+                            .onChange(of: batteryChargeLimitPercent) { _, _ in
+                                BatteryChargeLimitService.shared.syncWithPreferences()
+                            }
+                            SettingsCaptionText(strings.caption)
+                        } else {
+                            SettingsCaptionText(strings.statusUnavailable)
+                        }
+                    }
+                } header: {
+                    Text(strings.pageTitle)
+                }
+                .settingsSectionAnchor(.batteryChargeLimit)
             }
         }
         .formStyle(.grouped)

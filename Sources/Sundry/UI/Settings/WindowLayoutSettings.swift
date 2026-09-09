@@ -200,6 +200,16 @@ struct WindowLayoutSettings: View {
                         .foregroundStyle(resultColor)
                 }
             }
+
+            if AppFeature.windowPin.isAvailable {
+                WindowPinSection()
+                    .settingsSectionAnchor(.windowPin)
+            }
+
+            if AppFeature.windowLayoutPresets.isAvailable {
+                WindowLayoutPresetsSection()
+                    .settingsSectionAnchor(.windowLayoutPresets)
+            }
         }
         .formStyle(.grouped)
         .onAppear { refreshSystemTilingState() }
