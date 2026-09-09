@@ -22,14 +22,12 @@ E2E/
 .DS_Store
 
 # Xcode / SwiftPM user state
-*.xcodeproj
+# (Vorssaint.xcodeproj is tracked on purpose; only user state is ignored)
 xcuserdata/
 .swiftpm/
 .cursor/
 .gemini/
 
 # Xcode
-*.xcworkspace/xcuserdata/
-Vorssaint.xcodeproj/xcuserdata/
 Vorssaint.xcodeproj/project.xcworkspace/
 DerivedData/
