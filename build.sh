@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Vorssaint
 
-# Builds Vorssaint, assembles the .app bundle, signs it and (with --install)
+# Builds Sundry, assembles the .app bundle, signs it and (with --install)
 # installs it into /Applications.
 #
 # The bundle is staged in a temporary directory outside ~/Documents: folders synced
@@ -26,7 +26,7 @@ trap cleanup EXIT
 # into the build sweeps like any other ending.
 trap 'exit 1' INT TERM HUP
 
-# Flags: --dev builds the local-only "Vorssaint (Developer)" variant (its own
+# Flags: --dev builds the local-only "Sundry (Developer)" variant (its own
 # bundle id, so it coexists with the official app); --install puts it in /Applications.
 DEV=0
 INSTALL=0
@@ -40,16 +40,16 @@ for arg in "$@"; do
 done
 
 if (( DEV )); then
-    APP_NAME="Vorssaint (Developer)"
-    EXECUTABLE="VorssaintDeveloper"
-    APP_BUNDLE_ID="com.vorssaint.utils.dev"
-    BUILD_VARIANT_FLAGS=(-D VORSSAINT_DEVELOPMENT)
+    APP_NAME="Sundry (Developer)"
+    EXECUTABLE="SundryDeveloper"
+    APP_BUNDLE_ID="com.sundry.utils.dev"
+    BUILD_VARIANT_FLAGS=(-D SUNDRY_DEVELOPMENT)
     APP_OPTIMIZATION_FLAGS=(-Onone)
     BUILD_CONFIGURATION="debug"
 else
-    APP_NAME="Vorssaint"
-    EXECUTABLE="Vorssaint"
-    APP_BUNDLE_ID="com.vorssaint.utils"
+    APP_NAME="Sundry"
+    EXECUTABLE="Sundry"
+    APP_BUNDLE_ID="com.sundry.utils"
     BUILD_VARIANT_FLAGS=()
     APP_OPTIMIZATION_FLAGS=(-O)
     BUILD_CONFIGURATION="release"
@@ -58,10 +58,10 @@ FAN_HELPER_ID="$APP_BUNDLE_ID.fan-control"
 # Now Playing is read through /usr/bin/perl loading this library; see
 # Sources/NowPlayingAdapter. Staged under Contents/Frameworks, signed on its own.
 NOW_PLAYING_ADAPTER_ID="$APP_BUNDLE_ID.now-playing"
-NOW_PLAYING_ADAPTER="libVorssaintNowPlaying.dylib"
+NOW_PLAYING_ADAPTER="libSundryNowPlaying.dylib"
 TARGET="arm64-apple-macosx14.0"
-ENTITLEMENTS="Resources/Vorssaint.entitlements"
-LEGACY_IDENTITY="Vorssaint Utils Signing"
+ENTITLEMENTS="Resources/Sundry.entitlements"
+LEGACY_IDENTITY="Sundry Utils Signing"
 
 developer_id_identity() {
     security find-identity -v -p codesigning 2>/dev/null \
@@ -77,8 +77,8 @@ legacy_identity_installed() {
     local probe signed=1
     # A locked keychain still lists its identities but cannot sign with them,
     # and this one is locked after every reboot; unlock it before asking.
-    security unlock-keychain -p vorssaint-signing \
-        "$HOME/Library/Keychains/vorssaint-signing.keychain-db" 2>/dev/null || true
+    security unlock-keychain -p sundry-signing \
+        "$HOME/Library/Keychains/sundry-signing.keychain-db" 2>/dev/null || true
     probe="$(mktemp)"
     cp /bin/echo "$probe"
     /usr/bin/codesign --force --strip-disallowed-xattrs --sign "$LEGACY_IDENTITY" "$probe" \
@@ -181,8 +181,8 @@ finalize_installed_bundle_after_child() {
     echo "✓ Signature ready: $bundle"
 }
 
-if (( INSTALL && ! TEST )) && [[ "${VORSSAINT_INSTALL_CHILD:-0}" != "1" ]]; then
-    VORSSAINT_INSTALL_CHILD=1 "$0" "$@"
+if (( INSTALL && ! TEST )) && [[ "${SUNDRY_INSTALL_CHILD:-0}" != "1" ]]; then
+    SUNDRY_INSTALL_CHILD=1 "$0" "$@"
     child_status=$?
     if (( child_status != 0 )); then
         exit "$child_status"
@@ -222,13 +222,13 @@ discard_test_preferences() {
     # cfprefsd can recreate an emptied domain after the first removal. Require
     # two quiet checks, but keep a hard limit so persistent failures still fail CI.
     for attempt in {1..10}; do
-        for name in "vorss.tests." "com.vorssaint.tests."; do
+        for name in "sundry.tests." "com.sundry.tests."; do
             rm -f "$preferences"/$name*.plist(N)
         done
         rm -f "$preferences/metrics-tests.plist"
         sleep 0.2
         survivors=$(find "$preferences" -maxdepth 1 \
-            \( -name "vorss.tests.*.plist" -o -name "com.vorssaint.tests.*.plist" \
+            \( -name "sundry.tests.*.plist" -o -name "com.sundry.tests.*.plist" \
                -o -name "metrics-tests.plist" \) 2>/dev/null | wc -l | tr -d ' ')
         if [[ "$survivors" == "0" ]]; then
             quiet_passes=$((quiet_passes + 1))
@@ -253,178 +253,178 @@ if (( TEST )); then
     # test harness compile time without reducing the code the tests exercise.
     swiftc -Onone -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" \
         "${VM_STATISTICS_COMPAT_FLAGS[@]}" \
-        Sources/Vorssaint/Services/Media/MediaSupport.swift \
-        Sources/Vorssaint/Core/QuitProtectionSupport.swift \
-        Sources/Vorssaint/Core/QuitProtectionStrings.swift \
-        Sources/Vorssaint/Core/Defaults.swift \
-        Sources/Vorssaint/Core/FeatureCatalog.swift \
-        Sources/Vorssaint/Core/FeaturePresets.swift \
-        Sources/Vorssaint/Core/FeatureHubStrings.swift \
-        Sources/Vorssaint/Core/ShortcutSettingsStrings.swift \
-        Sources/Vorssaint/Core/SettingsBackupSupport.swift \
-        Sources/Vorssaint/Core/BackupStrings.swift \
-        Sources/Vorssaint/Core/SnippetStrings.swift \
-        Sources/Vorssaint/Core/BrightnessStrings.swift \
-        Sources/Vorssaint/Core/MediaImageStrings.swift \
-        Sources/Vorssaint/Core/QuickToggleStrings.swift \
-        Sources/Vorssaint/Core/ScreenshotStrings.swift \
-        Sources/Vorssaint/Core/RecentCaptureStrings.swift \
-        Sources/Vorssaint/Core/RecorderStrings.swift \
-        Sources/Vorssaint/Core/RecorderShareStrings.swift \
-        Sources/Vorssaint/Core/CameraPreviewStrings.swift \
-        Sources/Vorssaint/Core/ScratchpadStrings.swift \
-        Sources/Vorssaint/Core/FinderRenameStrings.swift \
-        Sources/Vorssaint/Core/CommandBarStrings.swift \
-        Sources/Vorssaint/Core/FeedbackStrings.swift \
-        Sources/Vorssaint/Core/RadialMenuStrings.swift \
-        Sources/Vorssaint/Core/MenuBarAppearanceStrings.swift \
-        Sources/Vorssaint/Core/AppAppearance.swift \
-        Sources/Vorssaint/Core/AppearanceStrings.swift \
-        Sources/Vorssaint/Core/BatteryTimeStrings.swift \
-        Sources/Vorssaint/Core/KeepAwakeStrings.swift \
-        Sources/Vorssaint/Core/BluetoothSleepStrings.swift \
-        Sources/Vorssaint/Core/PermissionGuideStrings.swift \
-        Sources/Vorssaint/Core/FanControlStrings.swift \
-        Sources/Vorssaint/Services/FanControl/FanControlSupport.swift \
-        Sources/Vorssaint/Services/Snippets/TextSnippetSupport.swift \
-        Sources/Vorssaint/Services/RadialMenu/RadialMenuSupport.swift \
-        Sources/Vorssaint/Services/QuickTools/ScratchpadSupport.swift \
-        Sources/Vorssaint/Services/QuickTools/ScratchpadStore.swift \
-        Sources/Vorssaint/Services/KillProcess/KillProcessSupport.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderSupport.swift \
-        Sources/Vorssaint/Services/Recorder/RecordingSharingSupport.swift \
-        Sources/Vorssaint/Services/PrivateFileStore.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderTakeStore.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderPresetImageStore.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderMotion.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderPointerTrack.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderTypingTrack.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderTimeline.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderTextOverlay.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderImageOverlay.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderBlurRegion.swift \
-        Sources/Vorssaint/Services/Recorder/RecorderEditDocument.swift \
-        Sources/Vorssaint/Core/AppInfo.swift \
-        Sources/Vorssaint/Core/GlobalShortcut.swift \
-        Sources/Vorssaint/Core/SymbolicHotKeys.swift \
-        Sources/Vorssaint/Services/SystemShortcutTakeoverSupport.swift \
-        Sources/Vorssaint/Core/Localization.swift \
-        Sources/Vorssaint/Core/Localizations/Strings+*.swift \
-        Sources/Vorssaint/Core/FeatureStrings.swift \
-        Sources/Vorssaint/Core/KillProcessStrings.swift \
-        Sources/Vorssaint/Core/WhatsAppDownloadStrings.swift \
-        Sources/Vorssaint/Core/WhatsAppOrganizerStrings.swift \
-        Sources/Vorssaint/Core/ReleaseNotes.swift \
-        Sources/Vorssaint/Core/URLCleaning.swift \
-        Sources/Vorssaint/Services/GeneralPasteboardAccess.swift \
-        Sources/Vorssaint/Services/Audio/MixerRoutingSupport.swift \
-        Sources/Vorssaint/Services/Audio/MusicLaunchSupport.swift \
-        Sources/Vorssaint/Services/Bluetooth/BluetoothSleepSupport.swift \
-        Sources/Vorssaint/UI/MenuPanel/MixerPercentNativeTextField.swift \
-        Sources/Vorssaint/Services/Audio/BoostLimiter.swift \
-        Sources/Vorssaint/Services/Audio/MixerRender.swift \
-        Sources/Vorssaint/Services/Audio/PreciseVolumeRollerSupport.swift \
-        Sources/Vorssaint/Services/DockPreview/DockPreviewSupport.swift \
-        Sources/Vorssaint/Services/Homebrew/HomebrewSupport.swift \
-        Sources/Vorssaint/Services/AppUpdates/AppUpdatesSupport.swift \
-        Sources/Vorssaint/Services/AppUpdates/AppUpdateFeedSupport.swift \
-        Sources/Vorssaint/Core/AppUpdateStrings.swift \
-        Sources/Vorssaint/Core/DiskImageInstallerStrings.swift \
-        Sources/Vorssaint/Services/DiskImageInstaller/DiskImageInstallerSupport.swift \
-        Sources/Vorssaint/Services/Clipboard/ClipboardHistorySupport.swift \
-        Sources/Vorssaint/Services/Clipboard/ClipboardAutoClearSupport.swift \
-        Sources/Vorssaint/Services/AutoQuit/AutoQuitSupport.swift \
-        Sources/Vorssaint/Services/Shelf/ShelfSupport.swift \
-        Sources/Vorssaint/Services/Finder/FinderRenameSupport.swift \
-        Sources/Vorssaint/Services/Update/UpdateInstallerSupport.swift \
-        Sources/Vorssaint/Services/Update/UpdateServiceSupport.swift \
-        Sources/Vorssaint/Services/InstalledApps.swift \
-        Sources/Vorssaint/Services/LaunchAtLoginSupport.swift \
-        Sources/Vorssaint/UI/Settings/SettingsSearchSupport.swift \
-        Sources/Vorssaint/UI/Settings/FeatureVisibilitySupport.swift \
-        Sources/Vorssaint/App/MenuBarSpacingSupport.swift \
-        Sources/Vorssaint/App/StatusItemAnchorSupport.swift \
-        Sources/Vorssaint/Services/DockClick/DockClickSupport.swift \
-        Sources/Vorssaint/Services/Finder/CutPasteProgressSupport.swift \
-        Sources/Vorssaint/Services/Finder/CutPastePrivilegeSupport.swift \
-        Sources/Vorssaint/Services/Finder/FinderPasteImageSupport.swift \
-        Sources/Vorssaint/Services/MiddleClick/MiddleClickSupport.swift \
-        Sources/Vorssaint/Services/MouseNavigation/MouseNavigationSupport.swift \
-        Sources/Vorssaint/Services/MouseButtons/MouseButtonShortcutSupport.swift \
-        Sources/Vorssaint/Services/MouseButtons/MouseSpacesGestureSupport.swift \
-        Sources/Vorssaint/Services/MouseClickDebounce/MouseClickDebounceSupport.swift \
-        Sources/Vorssaint/Services/MouseExceptions/MouseAppExceptionSupport.swift \
-        Sources/Vorssaint/Services/MouseExceptions/MouseAppExceptions.swift \
-        Sources/Vorssaint/Services/WindowServerSupport.swift \
-        Sources/Vorssaint/Core/MouseButtonStrings.swift \
-        Sources/Vorssaint/Core/MouseClickDebounceStrings.swift \
-        Sources/Vorssaint/Core/MouseExceptionStrings.swift \
-        Sources/Vorssaint/Core/ClipboardIgnoredAppsStrings.swift \
-        Sources/Vorssaint/Core/WindowPreviewExclusionStrings.swift \
-        Sources/Vorssaint/Core/DiskExclusionStrings.swift \
-        Sources/Vorssaint/Core/SwitcherAppRulesStrings.swift \
-        Sources/Vorssaint/Services/QuickTools/QuickToolsSupport.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarSupport.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarPreferences.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarMath.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarUnits.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarEmoji.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarLinks.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarDates.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarRowShortcuts.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarSystemSettingsSupport.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarFileSearchSupport.swift \
-        Sources/Vorssaint/Services/CommandBar/CommandBarQueryMemory.swift \
-        Sources/Vorssaint/Services/SpotlightNamesSupport.swift \
-        Sources/Vorssaint/Services/QuickTools/MicMuteSupport.swift \
-        Sources/Vorssaint/Services/QuickTools/QuickTogglesSupport.swift \
-        Sources/Vorssaint/Services/QuickTools/ScreenshotCapturePolicy.swift \
-        Sources/Vorssaint/Services/QuickTools/ScreenshotSupport.swift \
-        Sources/Vorssaint/Services/QuickTools/RecentCaptureStore.swift \
-        Sources/Vorssaint/Services/QuickTools/ScreenshotSharingSupport.swift \
-        Sources/Vorssaint/Services/QuickTools/WindowActivationPolicy.swift \
-        Sources/Vorssaint/Services/KeyboardDebounce/KeyboardDebounceSupport.swift \
-        Sources/Vorssaint/Services/SuperKey/SuperKeySupport.swift \
-        Sources/Vorssaint/Services/SuperKey/SuperKeyMappingGuard.swift \
-        Sources/Vorssaint/Core/SuperKeyStrings.swift \
-        Sources/Vorssaint/Services/SessionActivity.swift \
-        Sources/Vorssaint/Services/SessionActivitySupport.swift \
-        Sources/Vorssaint/Services/ScrollWheelSupport.swift \
-        Sources/Vorssaint/Services/SmoothScrollSupport.swift \
-        Sources/Vorssaint/Services/MouseAcceleration/MouseAccelerationSupport.swift \
-        Sources/Vorssaint/Services/FocusFollowsMouse/FocusFollowsMouseSupport.swift \
-        Sources/Vorssaint/Services/Switcher/SwitcherModels.swift \
-        Sources/Vorssaint/Services/Switcher/SwitcherSupport.swift \
-        Sources/Vorssaint/Services/Switcher/SpaceHopSupport.swift \
-        Sources/Vorssaint/Services/Switcher/WindowUseOrder.swift \
-        Sources/Vorssaint/Services/Metrics/MetricFormat.swift \
-        Sources/Vorssaint/Services/Metrics/VMStatisticsDecoder.swift \
-        Sources/Vorssaint/Services/KeepAwakeAutomationSupport.swift \
-        Sources/Vorssaint/Services/SudoersSupport.swift \
-        Sources/Vorssaint/Services/Metrics/BatteryTimeSupport.swift \
-        Sources/Vorssaint/Services/BoundedProcessRunner.swift \
-        Sources/Vorssaint/Services/DetachedProcess.swift \
-        Sources/Vorssaint/Services/ShellSupport.swift \
-        Sources/Vorssaint/Services/Metrics/NetworkProcessSupport.swift \
-        Sources/Vorssaint/Services/Metrics/NetworkSampler.swift \
-        Sources/Vorssaint/Services/Metrics/SpeedTest.swift \
-        Sources/Vorssaint/Services/Metrics/PeripheralBatterySupport.swift \
-        Sources/Vorssaint/Services/Metrics/DiskSupport.swift \
-        Sources/Vorssaint/Services/Metrics/MonitorSamplingPolicy.swift \
-        Sources/Vorssaint/Services/Metrics/MaxCapacityProbe.swift \
-        Sources/Vorssaint/Services/Metrics/TemperatureSensorSelector.swift \
-        Sources/Vorssaint/Services/Metrics/SustainedAlertGate.swift \
-        Sources/Vorssaint/Services/WindowLayout/WindowLayoutSupport.swift \
-        Sources/Vorssaint/Services/WindowLayout/WindowGestureSupport.swift \
-        Sources/Vorssaint/Core/WindowDirectionalStrings.swift \
-        Sources/Vorssaint/Services/CleaningMode/CleaningUnlockCounter.swift \
-        Sources/Vorssaint/Services/Display/ExtraBrightnessSupport.swift \
-        Sources/Vorssaint/Services/Display/BrightnessSupport.swift \
-        Sources/Vorssaint/Services/Cleaner/CleanerSupport.swift \
-        Sources/Vorssaint/Services/Cleaner/CleanerPolicy.swift \
-        Sources/Vorssaint/Services/Cleaner/CleanerSchedule.swift \
-        Sources/Vorssaint/Services/Uninstall/UninstallerSupport.swift \
-        Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift \
+        Sources/Sundry/Services/Media/MediaSupport.swift \
+        Sources/Sundry/Core/QuitProtectionSupport.swift \
+        Sources/Sundry/Core/QuitProtectionStrings.swift \
+        Sources/Sundry/Core/Defaults.swift \
+        Sources/Sundry/Core/FeatureCatalog.swift \
+        Sources/Sundry/Core/FeaturePresets.swift \
+        Sources/Sundry/Core/FeatureHubStrings.swift \
+        Sources/Sundry/Core/ShortcutSettingsStrings.swift \
+        Sources/Sundry/Core/SettingsBackupSupport.swift \
+        Sources/Sundry/Core/BackupStrings.swift \
+        Sources/Sundry/Core/SnippetStrings.swift \
+        Sources/Sundry/Core/BrightnessStrings.swift \
+        Sources/Sundry/Core/MediaImageStrings.swift \
+        Sources/Sundry/Core/QuickToggleStrings.swift \
+        Sources/Sundry/Core/ScreenshotStrings.swift \
+        Sources/Sundry/Core/RecentCaptureStrings.swift \
+        Sources/Sundry/Core/RecorderStrings.swift \
+        Sources/Sundry/Core/RecorderShareStrings.swift \
+        Sources/Sundry/Core/CameraPreviewStrings.swift \
+        Sources/Sundry/Core/ScratchpadStrings.swift \
+        Sources/Sundry/Core/FinderRenameStrings.swift \
+        Sources/Sundry/Core/CommandBarStrings.swift \
+        Sources/Sundry/Core/FeedbackStrings.swift \
+        Sources/Sundry/Core/RadialMenuStrings.swift \
+        Sources/Sundry/Core/MenuBarAppearanceStrings.swift \
+        Sources/Sundry/Core/AppAppearance.swift \
+        Sources/Sundry/Core/AppearanceStrings.swift \
+        Sources/Sundry/Core/BatteryTimeStrings.swift \
+        Sources/Sundry/Core/KeepAwakeStrings.swift \
+        Sources/Sundry/Core/BluetoothSleepStrings.swift \
+        Sources/Sundry/Core/PermissionGuideStrings.swift \
+        Sources/Sundry/Core/FanControlStrings.swift \
+        Sources/Sundry/Services/FanControl/FanControlSupport.swift \
+        Sources/Sundry/Services/Snippets/TextSnippetSupport.swift \
+        Sources/Sundry/Services/RadialMenu/RadialMenuSupport.swift \
+        Sources/Sundry/Services/QuickTools/ScratchpadSupport.swift \
+        Sources/Sundry/Services/QuickTools/ScratchpadStore.swift \
+        Sources/Sundry/Services/KillProcess/KillProcessSupport.swift \
+        Sources/Sundry/Services/Recorder/RecorderSupport.swift \
+        Sources/Sundry/Services/Recorder/RecordingSharingSupport.swift \
+        Sources/Sundry/Services/PrivateFileStore.swift \
+        Sources/Sundry/Services/Recorder/RecorderTakeStore.swift \
+        Sources/Sundry/Services/Recorder/RecorderPresetImageStore.swift \
+        Sources/Sundry/Services/Recorder/RecorderMotion.swift \
+        Sources/Sundry/Services/Recorder/RecorderPointerTrack.swift \
+        Sources/Sundry/Services/Recorder/RecorderTypingTrack.swift \
+        Sources/Sundry/Services/Recorder/RecorderTimeline.swift \
+        Sources/Sundry/Services/Recorder/RecorderTextOverlay.swift \
+        Sources/Sundry/Services/Recorder/RecorderImageOverlay.swift \
+        Sources/Sundry/Services/Recorder/RecorderBlurRegion.swift \
+        Sources/Sundry/Services/Recorder/RecorderEditDocument.swift \
+        Sources/Sundry/Core/AppInfo.swift \
+        Sources/Sundry/Core/GlobalShortcut.swift \
+        Sources/Sundry/Core/SymbolicHotKeys.swift \
+        Sources/Sundry/Services/SystemShortcutTakeoverSupport.swift \
+        Sources/Sundry/Core/Localization.swift \
+        Sources/Sundry/Core/Localizations/Strings+*.swift \
+        Sources/Sundry/Core/FeatureStrings.swift \
+        Sources/Sundry/Core/KillProcessStrings.swift \
+        Sources/Sundry/Core/WhatsAppDownloadStrings.swift \
+        Sources/Sundry/Core/WhatsAppOrganizerStrings.swift \
+        Sources/Sundry/Core/ReleaseNotes.swift \
+        Sources/Sundry/Core/URLCleaning.swift \
+        Sources/Sundry/Services/GeneralPasteboardAccess.swift \
+        Sources/Sundry/Services/Audio/MixerRoutingSupport.swift \
+        Sources/Sundry/Services/Audio/MusicLaunchSupport.swift \
+        Sources/Sundry/Services/Bluetooth/BluetoothSleepSupport.swift \
+        Sources/Sundry/UI/MenuPanel/MixerPercentNativeTextField.swift \
+        Sources/Sundry/Services/Audio/BoostLimiter.swift \
+        Sources/Sundry/Services/Audio/MixerRender.swift \
+        Sources/Sundry/Services/Audio/PreciseVolumeRollerSupport.swift \
+        Sources/Sundry/Services/DockPreview/DockPreviewSupport.swift \
+        Sources/Sundry/Services/Homebrew/HomebrewSupport.swift \
+        Sources/Sundry/Services/AppUpdates/AppUpdatesSupport.swift \
+        Sources/Sundry/Services/AppUpdates/AppUpdateFeedSupport.swift \
+        Sources/Sundry/Core/AppUpdateStrings.swift \
+        Sources/Sundry/Core/DiskImageInstallerStrings.swift \
+        Sources/Sundry/Services/DiskImageInstaller/DiskImageInstallerSupport.swift \
+        Sources/Sundry/Services/Clipboard/ClipboardHistorySupport.swift \
+        Sources/Sundry/Services/Clipboard/ClipboardAutoClearSupport.swift \
+        Sources/Sundry/Services/AutoQuit/AutoQuitSupport.swift \
+        Sources/Sundry/Services/Shelf/ShelfSupport.swift \
+        Sources/Sundry/Services/Finder/FinderRenameSupport.swift \
+        Sources/Sundry/Services/Update/UpdateInstallerSupport.swift \
+        Sources/Sundry/Services/Update/UpdateServiceSupport.swift \
+        Sources/Sundry/Services/InstalledApps.swift \
+        Sources/Sundry/Services/LaunchAtLoginSupport.swift \
+        Sources/Sundry/UI/Settings/SettingsSearchSupport.swift \
+        Sources/Sundry/UI/Settings/FeatureVisibilitySupport.swift \
+        Sources/Sundry/App/MenuBarSpacingSupport.swift \
+        Sources/Sundry/App/StatusItemAnchorSupport.swift \
+        Sources/Sundry/Services/DockClick/DockClickSupport.swift \
+        Sources/Sundry/Services/Finder/CutPasteProgressSupport.swift \
+        Sources/Sundry/Services/Finder/CutPastePrivilegeSupport.swift \
+        Sources/Sundry/Services/Finder/FinderPasteImageSupport.swift \
+        Sources/Sundry/Services/MiddleClick/MiddleClickSupport.swift \
+        Sources/Sundry/Services/MouseNavigation/MouseNavigationSupport.swift \
+        Sources/Sundry/Services/MouseButtons/MouseButtonShortcutSupport.swift \
+        Sources/Sundry/Services/MouseButtons/MouseSpacesGestureSupport.swift \
+        Sources/Sundry/Services/MouseClickDebounce/MouseClickDebounceSupport.swift \
+        Sources/Sundry/Services/MouseExceptions/MouseAppExceptionSupport.swift \
+        Sources/Sundry/Services/MouseExceptions/MouseAppExceptions.swift \
+        Sources/Sundry/Services/WindowServerSupport.swift \
+        Sources/Sundry/Core/MouseButtonStrings.swift \
+        Sources/Sundry/Core/MouseClickDebounceStrings.swift \
+        Sources/Sundry/Core/MouseExceptionStrings.swift \
+        Sources/Sundry/Core/ClipboardIgnoredAppsStrings.swift \
+        Sources/Sundry/Core/WindowPreviewExclusionStrings.swift \
+        Sources/Sundry/Core/DiskExclusionStrings.swift \
+        Sources/Sundry/Core/SwitcherAppRulesStrings.swift \
+        Sources/Sundry/Services/QuickTools/QuickToolsSupport.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarSupport.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarPreferences.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarMath.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarUnits.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarEmoji.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarLinks.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarDates.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarRowShortcuts.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarSystemSettingsSupport.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarFileSearchSupport.swift \
+        Sources/Sundry/Services/CommandBar/CommandBarQueryMemory.swift \
+        Sources/Sundry/Services/SpotlightNamesSupport.swift \
+        Sources/Sundry/Services/QuickTools/MicMuteSupport.swift \
+        Sources/Sundry/Services/QuickTools/QuickTogglesSupport.swift \
+        Sources/Sundry/Services/QuickTools/ScreenshotCapturePolicy.swift \
+        Sources/Sundry/Services/QuickTools/ScreenshotSupport.swift \
+        Sources/Sundry/Services/QuickTools/RecentCaptureStore.swift \
+        Sources/Sundry/Services/QuickTools/ScreenshotSharingSupport.swift \
+        Sources/Sundry/Services/QuickTools/WindowActivationPolicy.swift \
+        Sources/Sundry/Services/KeyboardDebounce/KeyboardDebounceSupport.swift \
+        Sources/Sundry/Services/SuperKey/SuperKeySupport.swift \
+        Sources/Sundry/Services/SuperKey/SuperKeyMappingGuard.swift \
+        Sources/Sundry/Core/SuperKeyStrings.swift \
+        Sources/Sundry/Services/SessionActivity.swift \
+        Sources/Sundry/Services/SessionActivitySupport.swift \
+        Sources/Sundry/Services/ScrollWheelSupport.swift \
+        Sources/Sundry/Services/SmoothScrollSupport.swift \
+        Sources/Sundry/Services/MouseAcceleration/MouseAccelerationSupport.swift \
+        Sources/Sundry/Services/FocusFollowsMouse/FocusFollowsMouseSupport.swift \
+        Sources/Sundry/Services/Switcher/SwitcherModels.swift \
+        Sources/Sundry/Services/Switcher/SwitcherSupport.swift \
+        Sources/Sundry/Services/Switcher/SpaceHopSupport.swift \
+        Sources/Sundry/Services/Switcher/WindowUseOrder.swift \
+        Sources/Sundry/Services/Metrics/MetricFormat.swift \
+        Sources/Sundry/Services/Metrics/VMStatisticsDecoder.swift \
+        Sources/Sundry/Services/KeepAwakeAutomationSupport.swift \
+        Sources/Sundry/Services/SudoersSupport.swift \
+        Sources/Sundry/Services/Metrics/BatteryTimeSupport.swift \
+        Sources/Sundry/Services/BoundedProcessRunner.swift \
+        Sources/Sundry/Services/DetachedProcess.swift \
+        Sources/Sundry/Services/ShellSupport.swift \
+        Sources/Sundry/Services/Metrics/NetworkProcessSupport.swift \
+        Sources/Sundry/Services/Metrics/NetworkSampler.swift \
+        Sources/Sundry/Services/Metrics/SpeedTest.swift \
+        Sources/Sundry/Services/Metrics/PeripheralBatterySupport.swift \
+        Sources/Sundry/Services/Metrics/DiskSupport.swift \
+        Sources/Sundry/Services/Metrics/MonitorSamplingPolicy.swift \
+        Sources/Sundry/Services/Metrics/MaxCapacityProbe.swift \
+        Sources/Sundry/Services/Metrics/TemperatureSensorSelector.swift \
+        Sources/Sundry/Services/Metrics/SustainedAlertGate.swift \
+        Sources/Sundry/Services/WindowLayout/WindowLayoutSupport.swift \
+        Sources/Sundry/Services/WindowLayout/WindowGestureSupport.swift \
+        Sources/Sundry/Core/WindowDirectionalStrings.swift \
+        Sources/Sundry/Services/CleaningMode/CleaningUnlockCounter.swift \
+        Sources/Sundry/Services/Display/ExtraBrightnessSupport.swift \
+        Sources/Sundry/Services/Display/BrightnessSupport.swift \
+        Sources/Sundry/Services/Cleaner/CleanerSupport.swift \
+        Sources/Sundry/Services/Cleaner/CleanerPolicy.swift \
+        Sources/Sundry/Services/Cleaner/CleanerSchedule.swift \
+        Sources/Sundry/Services/Uninstall/UninstallerSupport.swift \
+        Sources/Sundry/Services/ManagedDownloads/WhatsAppDownloadSupport.swift \
         Tests/MetricsTests.swift \
         Tests/RecentCaptureStoreTests.swift \
         Tests/RecorderPresetImageStoreTests.swift \
@@ -439,7 +439,7 @@ if (( TEST )); then
 fi
 
 echo "▸ Compiling ($BUILD_CONFIGURATION) against $(basename "$SDK")…"
-APP_SOURCES=(Sources/Vorssaint/**/*.swift)
+APP_SOURCES=(Sources/Sundry/**/*.swift)
 if (( DEV )); then
     APP_OBJECT_DIR="build/objects/$EXECUTABLE"
     mkdir -p build "$APP_OBJECT_DIR"
@@ -460,18 +460,18 @@ fi
 
 echo "▸ Compiling protected fan helper…"
 swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" "${BUILD_VARIANT_FLAGS[@]}" \
-    Sources/Vorssaint/Services/FanControl/FanControlSupport.swift \
-    Sources/Vorssaint/Services/FanControl/FanControlXPC.swift \
-    Sources/Vorssaint/Services/SystemMonitor/SMCClient.swift \
-    Sources/Vorssaint/Services/Metrics/TemperatureSensorSelector.swift \
-    Sources/Vorssaint/Services/FanControl/FanControlHardware.swift \
+    Sources/Sundry/Services/FanControl/FanControlSupport.swift \
+    Sources/Sundry/Services/FanControl/FanControlXPC.swift \
+    Sources/Sundry/Services/SystemMonitor/SMCClient.swift \
+    Sources/Sundry/Services/Metrics/TemperatureSensorSelector.swift \
+    Sources/Sundry/Services/FanControl/FanControlHardware.swift \
     Sources/FanControlHelper/main.swift \
     -o "build/$FAN_HELPER_ID"
 "build/$FAN_HELPER_ID" --selftest
 
 echo "▸ Compiling Now Playing adapter…"
 swiftc -O -target "$TARGET" -sdk "$SDK" "${SDK_COMPAT_FLAGS[@]}" -emit-library \
-    -module-name VorssaintNowPlaying \
+    -module-name SundryNowPlaying \
     Sources/NowPlayingAdapter/NowPlayingAdapter.swift \
     -o "build/$NOW_PLAYING_ADAPTER"
 
@@ -517,7 +517,7 @@ cp "build/$FAN_HELPER_ID" "$STAGE/Contents/Library/LaunchServices/$FAN_HELPER_ID
 mkdir -p "$STAGE/Contents/Frameworks"
 cp "build/$NOW_PLAYING_ADAPTER" "$STAGE/Contents/Frameworks/$NOW_PLAYING_ADAPTER"
 cp Resources/now-playing.pl "$STAGE/Contents/Resources/now-playing.pl"
-cp Resources/com.vorssaint.utils.fan-control.plist \
+cp Resources/com.sundry.utils.fan-control.plist \
     "$STAGE/Contents/Library/LaunchDaemons/$FAN_HELPER_ID.plist"
 cp Resources/Info.plist "$STAGE/Contents/Info.plist"
 cp CHANGELOG.md "$STAGE/Contents/Resources/CHANGELOG.md"
@@ -527,21 +527,21 @@ done
 if (( DEV )); then
     # A distinct identity so the Developer build installs and runs next to the
     # official app, with its own permissions, preferences and login item.
-    /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.vorssaint.utils.dev" "$STAGE/Contents/Info.plist"
-    /usr/libexec/PlistBuddy -c "Set :CFBundleName Vorssaint (Developer)" "$STAGE/Contents/Info.plist"
-    /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Vorssaint (Developer)" "$STAGE/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.sundry.utils.dev" "$STAGE/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c "Set :CFBundleName Sundry (Developer)" "$STAGE/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Sundry (Developer)" "$STAGE/Contents/Info.plist"
     /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable $EXECUTABLE" "$STAGE/Contents/Info.plist"
     FAN_PLIST="$STAGE/Contents/Library/LaunchDaemons/$FAN_HELPER_ID.plist"
     /usr/libexec/PlistBuddy -c "Set :Label $FAN_HELPER_ID" "$FAN_PLIST"
     /usr/libexec/PlistBuddy -c "Set :BundleProgram Contents/Library/LaunchServices/$FAN_HELPER_ID" "$FAN_PLIST"
-    /usr/libexec/PlistBuddy -c "Delete :MachServices:com.vorssaint.utils.fan-control" "$FAN_PLIST"
+    /usr/libexec/PlistBuddy -c "Delete :MachServices:com.sundry.utils.fan-control" "$FAN_PLIST"
     /usr/libexec/PlistBuddy -c "Add :MachServices:$FAN_HELPER_ID bool true" "$FAN_PLIST"
     # Stamp the source commit + build time so the running dev app shows (in About)
     # exactly which code it was compiled from. Lets you verify it matches HEAD before
     # testing, instead of unknowingly running a stale build. Dev-only; never shipped.
     SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
     [[ -n "$(git status --porcelain 2>/dev/null)" ]] && SHA="$SHA-dirty"
-    /usr/libexec/PlistBuddy -c "Add :VorssaintBuildCommit string '$SHA · $(date '+%Y-%m-%d %H:%M')'" "$STAGE/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c "Add :SundryBuildCommit string '$SHA · $(date '+%Y-%m-%d %H:%M')'" "$STAGE/Contents/Info.plist"
     echo "  stamped dev build: $SHA"
 fi
 FAN_HELPER_VERSION="$(
@@ -552,7 +552,7 @@ FAN_HELPER_VERSION="$(
         | /usr/bin/awk '{print $1}' | /usr/bin/shasum -a 256 \
         | /usr/bin/awk '{print $1}'
 )"
-/usr/libexec/PlistBuddy -c "Add :VorssaintFanControlHelperVersion string '$FAN_HELPER_VERSION'" \
+/usr/libexec/PlistBuddy -c "Add :SundryFanControlHelperVersion string '$FAN_HELPER_VERSION'" \
     "$STAGE/Contents/Info.plist"
 printf 'APPL????' > "$STAGE/Contents/PkgInfo"
 cp build/AppIcon.icns "$STAGE/Contents/Resources/AppIcon.icns"
@@ -576,7 +576,7 @@ xattr -c -r "$STAGE" 2>/dev/null || true
 #      notarization), the app's entitlements and a secure timestamp. Gives a
 #      stable, team-based designated requirement, so permissions persist across
 #      updates AND Gatekeeper shows no "unverified developer" warning.
-#   2. "Vorssaint Utils Signing" — the legacy stable self-signed identity, kept
+#   2. "Sundry Utils Signing" — the legacy stable self-signed identity, kept
 #      as a fallback so contributors without a Developer ID still get a constant
 #      designated requirement across their local builds.
 #   3. Ad-hoc — fresh clone with no identity at all.
@@ -722,7 +722,7 @@ if (( INSTALL )); then
     stop_process "$EXECUTABLE"
     # Remove the pre-rename apps so two menu bar items never coexist. Same bundle
     # id, so macOS keeps the granted permissions for the new bundle.
-    for legacy in "Vorss:Vorss" "Vorssaint Utils:VorssaintUtils"; do
+    for legacy in "Vorss:Vorss" "Sundry Utils:SundryUtils"; do
         name="${legacy%%:*}"; proc="${legacy##*:}"
         if [[ -d "/Applications/$name.app" ]]; then
             stop_process "$proc"
