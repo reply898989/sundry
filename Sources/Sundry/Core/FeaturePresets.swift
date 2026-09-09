@@ -124,13 +124,20 @@ extension AppFeature {
              .musicBlock, .bluetoothSleep, .keepAwake, .brightness, .quickLauncher, .quickToggles, .colorPicker,
              .screenOCR, .cleaningMode, .mediaTools, .cleaner, .uninstaller, .homebrew, .screenshot,
              .cameraPreview, .scratchpad, .commandBar, .screenRecorder, .fanControl,
-             .diskImageInstaller, .killProcess:
+             .diskImageInstaller, .killProcess,
+             .windowLayoutPresets, .windowPin, .focusTimer, .menuBarOverflow:
             return .idle
         case .appUpdates:
             // The list is on demand; only a background schedule keeps a timer.
             return AppUpdatesSupport.CheckFrequency.sanitized(
                 UserDefaults.standard.string(forKey: DefaultsKey.appUpdatesCheckFrequency)) == .off
                 ? .idle : .periodic
+        case .darkModeSchedule:
+            return UserDefaults.standard.bool(forKey: DefaultsKey.darkModeScheduleEnabled)
+                ? .periodic : .idle
+        case .batteryChargeLimit:
+            return UserDefaults.standard.bool(forKey: DefaultsKey.batteryChargeLimitEnabled)
+                ? .periodic : .idle
         }
     }
 }

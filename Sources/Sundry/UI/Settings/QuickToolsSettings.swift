@@ -241,6 +241,11 @@ struct QuickToolsSettings: View {
                 }
                 .settingsSectionAnchor(.cleaningMode)
             }
+
+            if AppFeature.focusTimer.isAvailable {
+                FocusTimerSection()
+                    .settingsSectionAnchor(.focusTimer)
+            }
         }
         .formStyle(.grouped)
     }

@@ -8,6 +8,12 @@ import Combine
 /// Owns the menu bar presence: the black hole glyph, the optional countdown
 /// title and the tooltip. Click handling is delegated back to the AppDelegate.
 final class StatusItemController {
+    /// The live controller, for services that need to reach the actual menu
+    /// bar items without AppDelegate wiring them through explicitly — only
+    /// MenuBarOverflowService reads this today. Weak: AppDelegate still owns
+    /// the one real instance, this is never a second owner of it.
+    private(set) static weak var current: StatusItemController?
+
     var onLeftClick: (() -> Void)?
     var onRightClick: (() -> Void)?
     var onMetricClick: ((MenuBarMetric, NSStatusBarButton) -> Void)?
@@ -74,6 +80,18 @@ final class StatusItemController {
     init() {
         installStatusItem()
         bind()
+        Self.current = self
+    }
+
+    /// The metric items showing right now, for Menu bar overflow's Settings
+    /// list. Read-only and a point-in-time snapshot: the list only needs to
+    /// be accurate when Settings is open, which already re-renders on every
+    /// relevant change through ObservableObject.
+    var currentMetricItemIDs: [(id: String, title: String)] {
+        metricStatusItems.compactMap { id, item in
+            guard let title = item.button?.toolTip, !title.isEmpty else { return nil }
+            return (id, title)
+        }.sorted { $0.title < $1.title }
     }
 
     /// Creates the status item and configures its button. The menu bar item is the
@@ -536,6 +554,25 @@ final class StatusItemController {
             if button.toolTip != group.title {
                 button.toolTip = group.title
             }
+        }
+        applyMenuBarOverflowVisibility()
+    }
+
+    /// Applies Menu bar overflow's hidden set to whichever metric items exist
+    /// right now. Visibility only — it never creates or removes an item, so
+    /// it is safe to call from a refresh cycle, from a toggle in Settings, or
+    /// from the overflow chevron being clicked, in any order.
+    func applyMenuBarOverflowVisibility() {
+        guard AppFeature.menuBarOverflow.isAvailable,
+              UserDefaults.standard.bool(forKey: DefaultsKey.menuBarOverflowEnabled)
+        else {
+            for item in metricStatusItems.values where !item.isVisible { item.isVisible = true }
+            return
+        }
+        let hidden = MenuBarOverflowService.shared.hiddenItemIDs
+        let revealed = MenuBarOverflowService.shared.isTemporarilyRevealed
+        for (id, item) in metricStatusItems {
+            item.isVisible = revealed || !hidden.contains(id)
         }
     }
 

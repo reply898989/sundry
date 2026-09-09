@@ -179,6 +179,22 @@ enum DefaultsKey {
     static let startupDidNotFinish = "startupDidNotFinish"
     static let bluetoothSleepEnabled = "bluetoothSleepEnabled"
     static let bluetoothSleepRestoreOnWake = "bluetoothSleepRestoreOnWake"
+    static let darkModeScheduleEnabled = "darkModeScheduleEnabled"
+    static let darkModeScheduleLightMinutes = "darkModeScheduleLightMinutes"  // minutes since midnight
+    static let darkModeScheduleDarkMinutes = "darkModeScheduleDarkMinutes"
+    static let batteryChargeLimitEnabled = "batteryChargeLimitEnabled"
+    static let batteryChargeLimitPercent = "batteryChargeLimitPercent"
+    // Set only while Sundry owes a charge-inhibit release, so a Mac shut down
+    // (or an app crash) mid-inhibit still gets charging back on the next launch.
+    static let batteryChargeInhibitOwedRestore = "batteryChargeInhibitOwedRestore"
+    static let windowPinEnabled = "windowPinEnabled"
+    static let windowPinnedWindowIDs = "windowPinnedWindowIDs"       // [CGWindowID] as [Int], this session only
+    static let menuBarOverflowEnabled = "menuBarOverflowEnabled"
+    static let menuBarOverflowHiddenItemIDs = "menuBarOverflowHiddenItemIDs"  // [String] of item identifiers
+    static let focusTimerWorkMinutes = "focusTimerWorkMinutes"
+    static let focusTimerBreakMinutes = "focusTimerBreakMinutes"
+    static let focusTimerAutoStartNext = "focusTimerAutoStartNext"
+    static let windowLayoutPresetsData = "windowLayoutPresetsData"   // JSON [WindowLayoutPreset]
     // Set only while Sundry owes a Bluetooth restore, so a Mac shut down
     // while asleep still gets it back on the next launch.
     static let bluetoothSleepRestorePending = "bluetoothSleepRestorePending"
@@ -987,6 +1003,17 @@ enum Defaults {
         DefaultsKey.bluetoothSleepEnabled: false,
         DefaultsKey.bluetoothSleepRestoreOnWake: true,
         DefaultsKey.bluetoothSleepRestorePending: false,
+        DefaultsKey.darkModeScheduleEnabled: false,
+        DefaultsKey.darkModeScheduleLightMinutes: 8 * 60,       // 8:00
+        DefaultsKey.darkModeScheduleDarkMinutes: 20 * 60,       // 20:00
+        DefaultsKey.batteryChargeLimitEnabled: false,
+        DefaultsKey.batteryChargeLimitPercent: 80,
+        DefaultsKey.batteryChargeInhibitOwedRestore: false,
+        DefaultsKey.windowPinEnabled: true,
+        DefaultsKey.menuBarOverflowEnabled: false,
+        DefaultsKey.focusTimerWorkMinutes: 25,
+        DefaultsKey.focusTimerBreakMinutes: 5,
+        DefaultsKey.focusTimerAutoStartNext: false,
         DefaultsKey.musicBlockEnabled: false,
         DefaultsKey.musicBlockReplacementPath: "",
         DefaultsKey.cleanerScheduleFrequency: "off",
@@ -1652,6 +1679,10 @@ enum Defaults {
 
     static func sanitizedBatteryLimit(_ percent: Int) -> Int {
         allowedBatteryLimits.contains(percent) ? percent : 10
+    }
+
+    static func sanitizedBatteryChargeLimitPercent(_ percent: Int) -> Int {
+        min(max(percent, 50), 100)
     }
 
     static func sanitizedKeepAwakeMouseJiggleInterval(_ minutes: Int) -> Int {

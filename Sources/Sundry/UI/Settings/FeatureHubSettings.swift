@@ -757,6 +757,12 @@ extension AppFeature {
         case .monitorDisk: return s.diskSection
         case .monitorPower: return s.powerSection
         case .fanControl: return FeatureStrings.fanControl(L10n.shared.language).title
+        case .windowLayoutPresets: return FeatureStrings.windowLayoutPresets(L10n.shared.language).pageTitle
+        case .windowPin: return FeatureStrings.windowPin(L10n.shared.language).pageTitle
+        case .darkModeSchedule: return FeatureStrings.darkModeSchedule(L10n.shared.language).pageTitle
+        case .batteryChargeLimit: return FeatureStrings.batteryChargeLimit(L10n.shared.language).pageTitle
+        case .focusTimer: return FeatureStrings.focusTimer(L10n.shared.language).pageTitle
+        case .menuBarOverflow: return FeatureStrings.menuBarOverflow(L10n.shared.language).pageTitle
         }
     }
 
@@ -827,6 +833,12 @@ extension AppFeature {
         case .monitorDisk: return hub.descMonitorDisk
         case .monitorPower: return hub.descMonitorPower
         case .fanControl: return FeatureStrings.fanControl(L10n.shared.language).hubDescription
+        case .windowLayoutPresets: return FeatureStrings.windowLayoutPresets(L10n.shared.language).hubDescription
+        case .windowPin: return FeatureStrings.windowPin(L10n.shared.language).hubDescription
+        case .darkModeSchedule: return FeatureStrings.darkModeSchedule(L10n.shared.language).hubDescription
+        case .batteryChargeLimit: return FeatureStrings.batteryChargeLimit(L10n.shared.language).hubDescription
+        case .focusTimer: return FeatureStrings.focusTimer(L10n.shared.language).hubDescription
+        case .menuBarOverflow: return FeatureStrings.menuBarOverflow(L10n.shared.language).hubDescription
         }
     }
 }

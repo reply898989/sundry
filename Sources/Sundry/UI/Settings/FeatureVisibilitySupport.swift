@@ -19,10 +19,13 @@ enum SettingsPage: Hashable {
 enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case panelConfiguration
     case musicBlocking
+    case menuBarOverflow
     case keepAwake
     case brightness
     case extraBrightness
     case bluetoothSleep
+    case darkModeSchedule
+    case batteryChargeLimit
     case scrollDirection
     case focusFollowsMouse
     case smoothScroll
@@ -34,6 +37,9 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case switcher
     case dock
     case dockClick
+    case windowLayoutPresets
+    case windowPin
+    case focusTimer
     case finderCutPaste
     case finderRename
     case clipboardHistory
@@ -53,15 +59,17 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
 
     var page: SettingsPage {
         switch self {
-        case .panelConfiguration, .musicBlocking: return .general
-        case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep: return .energy
+        case .panelConfiguration, .musicBlocking, .menuBarOverflow: return .general
+        case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep, .darkModeSchedule, .batteryChargeLimit:
+            return .energy
         case .scrollDirection, .focusFollowsMouse, .smoothScroll, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
              .middleClick, .mouseClickDebounce:
             return .mouse
         case .switcher, .dock, .dockClick: return .switcher
+        case .windowLayoutPresets, .windowPin: return .windowLayout
         case .finderCutPaste, .finderRename: return .cutPaste
         case .clipboardHistory, .pastePlain: return .clipboard
-        case .quickLauncher, .quickToggles, .micMute, .cameraPreview, .scratchpad, .cleaningMode:
+        case .quickLauncher, .quickToggles, .micMute, .cameraPreview, .scratchpad, .cleaningMode, .focusTimer:
             return .quickTools
         case .screenshot, .screenRecorder, .colorPicker, .screenOCR:
             return .screenshot
@@ -250,6 +258,19 @@ extension AppFeature {
             return FeatureSettingsDestination(.monitor)
         case .fanControl:
             return FeatureSettingsDestination(.monitor, sectionAnchor: .fanControl)
+
+        case .windowLayoutPresets:
+            return FeatureSettingsDestination(.windowLayout, sectionAnchor: .windowLayoutPresets)
+        case .windowPin:
+            return FeatureSettingsDestination(.windowLayout, sectionAnchor: .windowPin)
+        case .darkModeSchedule:
+            return FeatureSettingsDestination(.energy, sectionAnchor: .darkModeSchedule)
+        case .batteryChargeLimit:
+            return FeatureSettingsDestination(.energy, sectionAnchor: .batteryChargeLimit)
+        case .focusTimer:
+            return FeatureSettingsDestination(.quickTools, sectionAnchor: .focusTimer)
+        case .menuBarOverflow:
+            return FeatureSettingsDestination(.general, sectionAnchor: .menuBarOverflow)
         }
     }
 }
@@ -266,12 +287,13 @@ enum FeatureVisibilitySupport {
     /// always shows (General, Shortcuts, About and friends).
     static func features(for page: SettingsPage) -> [AppFeature] {
         switch page {
-        case .energy: return [.keepAwake, .brightness, .extraBrightness, .bluetoothSleep]
+        case .energy: return [.keepAwake, .brightness, .extraBrightness, .bluetoothSleep,
+                              .darkModeSchedule, .batteryChargeLimit]
         case .monitor: return monitorFeatures
         case .mouse: return [.scrollInverter, .focusFollowsMouse, .smoothScroll, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
                              .middleClick, .mouseClickDebounce]
         case .switcher: return [.switcher, .dockPreview, .dockClick]
-        case .windowLayout: return [.windowLayout]
+        case .windowLayout: return [.windowLayout, .windowLayoutPresets, .windowPin]
         case .autoQuit: return [.autoQuit]
         case .quitProtection: return [.quitWindowProtection]
         case .clipboard: return [.clipboardHistory, .pastePlain, .finderCutPaste]
@@ -279,7 +301,7 @@ enum FeatureVisibilitySupport {
         case .shelf: return [.shelf]
         case .media: return [.mediaTools]
         case .quickTools: return [.quickLauncher, .quickToggles, .micMute,
-                                  .cameraPreview, .scratchpad, .cleaningMode]
+                                  .cameraPreview, .scratchpad, .cleaningMode, .focusTimer]
         case .urlCleaner: return [.urlCleaner]
         case .cleaner: return [.cleaner]
         case .homebrew: return [.homebrew]

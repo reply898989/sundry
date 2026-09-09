@@ -454,3 +454,43 @@ final class FanControlHardware {
         return (try? hardware.discoverControlledFans())?.isEmpty == false
     }()
 }
+
+/// Charge inhibit through the SMC's `CH0B` key. Widely documented (open
+/// source tools including `battery` and early AlDente builds write the same
+/// key), and narrower than Apple's own model-specific `BCLM` percentage key:
+/// `CH0B` only asks "may the battery accept current right now", so the app's
+/// own battery reading decides *when* to flip it, not the SMC.
+///
+/// Runs inside the privileged helper only; the write fails harmlessly with a
+/// permission error from the unprivileged app process, same as any other SMC
+/// write in this file.
+enum BatteryChargeControl {
+    private static let keyName = "CH0B"
+    private static let inhibitedByte: UInt8 = 0x02
+    private static let allowedByte: UInt8 = 0x00
+
+    /// Resolved once: the key either exists on this Mac or it does not, and
+    /// that cannot change while the helper runs.
+    private static let key: SMCClient.Key? = {
+        SMCClient()?.key(named: keyName)
+    }()
+
+    static var isSupported: Bool { key != nil }
+
+    /// Sets whether the battery may currently accept charge. Retries briefly
+    /// like every other write in this file, then reports failure rather than
+    /// leaving the caller unsure whether the Mac is actually inhibited.
+    @discardableResult
+    static func setInhibited(_ inhibited: Bool) -> Bool {
+        guard let key, let client = SMCClient() else { return false }
+        let target: UInt8 = inhibited ? inhibitedByte : allowedByte
+        for attempt in 0..<3 {
+            if (try? client.writeBytes([target], to: key)) != nil,
+               client.readBytes(key)?.first == target {
+                return true
+            }
+            if attempt < 2 { Thread.sleep(forTimeInterval: 0.05) }
+        }
+        return false
+    }
+}

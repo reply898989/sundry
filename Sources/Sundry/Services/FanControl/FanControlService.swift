@@ -59,7 +59,11 @@ final class FanControlService: ObservableObject {
     }
 
     func syncWithPreferences() {
-        if AppFeature.fanControl.isAvailable {
+        // The helper is a shared resource: Battery charge limit also needs
+        // root SMC access and rides the same daemon rather than installing a
+        // second one, so either feature being on keeps it registered, and it
+        // only unregisters once both are off.
+        if AppFeature.fanControl.isAvailable || AppFeature.batteryChargeLimit.isAvailable {
             if UserDefaults.standard.bool(forKey: DefaultsKey.fanControlRecoveryNeeded) {
                 restoreAutomatic()
             }
@@ -297,6 +301,33 @@ final class FanControlService: ObservableObject {
                                       forKey: DefaultsKey.fanControlHelperVersion)
             if response.succeeded, !response.snapshot.isCooling {
                 UserDefaults.standard.removeObject(forKey: DefaultsKey.fanControlRecoveryNeeded)
+            }
+        }
+    }
+
+    /// Asks the helper to allow or inhibit battery charging. `nil` on the
+    /// `supported` field of a failed call means the connection itself
+    /// failed (the daemon may need authorizing); a decoded response with
+    /// `supported == false` means this Mac's SMC has no `CH0B` key, which
+    /// BatteryChargeLimitService should stop retrying against.
+    func setChargeInhibited(_ inhibited: Bool,
+                            completion: @escaping (_ succeeded: Bool, _ supported: Bool?) -> Void) {
+        guard let proxy = proxy(errorHandler: { [weak self] failedConnection in
+            DispatchQueue.main.async {
+                if self?.connection === failedConnection {
+                    failedConnection.invalidate()
+                    self?.connection = nil
+                }
+                completion(false, nil)
+            }
+        }) else {
+            completion(false, nil)
+            return
+        }
+        proxy.setChargeInhibited(inhibited) { data in
+            let response = ChargeInhibitIPC.decode(data)
+            DispatchQueue.main.async {
+                completion(response?.succeeded ?? false, response?.supported)
             }
         }
     }

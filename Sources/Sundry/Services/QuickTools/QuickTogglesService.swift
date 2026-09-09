@@ -78,6 +78,17 @@ final class QuickTogglesService: ObservableObject {
         finishRun(.darkMode, state: nil)
     }
 
+    /// Sets the system appearance directly, for the Dark mode schedule: it
+    /// knows which side of the schedule "now" is on and never wants to guess
+    /// by inverting. Silently does nothing without the symbol, same as the
+    /// manual toggle's failure path but with no row state to report it in.
+    @discardableResult
+    func setDarkMode(_ dark: Bool) -> Bool {
+        guard let theme = Self.appearanceTheme else { return false }
+        if theme.get() != dark { theme.set(dark) }
+        return true
+    }
+
     // MARK: - Trash
 
     /// Asks first (emptying is permanent), then tells the Finder to empty
