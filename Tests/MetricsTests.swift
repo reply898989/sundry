@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Modified 2026 by the Sundry project, a fork of vorssaint/vorssaint-utils.
 
 import AppKit
 import Carbon.HIToolbox
@@ -705,7 +706,7 @@ struct MetricsTests {
                     "org.nspasteboard.ConcealedType",
                     "the secret mark keeps the exact name the apps that write it use")
 
-        let pasteboardAccess = GeneralPasteboardAccess(label: "Vorssaint.Tests.PasteboardAccess")
+        let pasteboardAccess = GeneralPasteboardAccess(label: "Sundry.Tests.PasteboardAccess")
         let pasteboardGroup = DispatchGroup()
         let pasteboardStateLock = NSLock()
         var activePasteboardOperations = 0
@@ -763,7 +764,7 @@ struct MetricsTests {
         expect(laneAnswer == 887, "the queued work runs once the lane comes free")
         expect(laneAnsweredOnMain, "the pasteboard lane answers on the main queue")
         let pastePlainSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/QuickTools/PastePlainService.swift",
+            contentsOfFile: "Sources/Sundry/Services/QuickTools/PastePlainService.swift",
             encoding: .utf8)) ?? ""
         expect(pastePlainSource.contains("GeneralPasteboardAccess.shared.async"),
                "paste as plain text reads the clipboard on the lane, not on the main thread")
@@ -1115,7 +1116,7 @@ struct MetricsTests {
                     == Defaults.defaultMouseClickDebounceWindowMs,
                "mouse click debounce keeps only its conservative settings range")
         let clickDebounceServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/MouseClickDebounce/MouseClickDebounceService.swift",
+            contentsOfFile: "Sources/Sundry/Services/MouseClickDebounce/MouseClickDebounceService.swift",
             encoding: .utf8)) ?? ""
         let clickDebounceServiceCode = clickDebounceServiceSource.components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -1150,7 +1151,7 @@ struct MetricsTests {
                 && !clickDebounceServiceCode.contains("asyncAfter"),
                "legacy click filtering adds no timer or delayed release to healthy clicks")
         let featureRuntimeSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/App/FeatureRuntime.swift",
+            contentsOfFile: "Sources/Sundry/App/FeatureRuntime.swift",
             encoding: .utf8)) ?? ""
         expect(featureRuntimeSource.contains(
             ".mouseClickDebounce: { MouseClickDebounceService.shared.syncWithPreferences() }"
@@ -1341,7 +1342,7 @@ struct MetricsTests {
                "launch, termination and mounted-volume changes refresh registered web handlers")
         expect(MouseNavigationSupport.shouldRefreshWebHandlers(
             isApplicationActivation: true, activatedPID: 41, ownPID: 41),
-               "activating Vorssaint refreshes registered web handlers")
+               "activating Sundry refreshes registered web handlers")
         expect(!MouseNavigationSupport.shouldRefreshWebHandlers(
             isApplicationActivation: true, activatedPID: 42, ownPID: 41),
                "activating another app does not repeat the handler lookup")
@@ -1574,7 +1575,7 @@ struct MetricsTests {
         expect(SettingsBackupSupport.exportKeys().contains(DefaultsKey.focusFollowsMouseDelay),
                "focus follows mouse preferences follow settings backups")
         let focusFollowsMouseServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/FocusFollowsMouse/FocusFollowsMouseService.swift",
+            contentsOfFile: "Sources/Sundry/Services/FocusFollowsMouse/FocusFollowsMouseService.swift",
             encoding: .utf8)) ?? ""
         expect(focusFollowsMouseServiceSource.contains(".leftMouseDragged")
                 && focusFollowsMouseServiceSource.contains(".rightMouseDragged")
@@ -2042,7 +2043,7 @@ struct MetricsTests {
                                        compressorPages: 0, tagStoragePages: 0) == 16,
                "memory used clamps impossible used memory")
 
-        var vmStats = vorssaint_vm_statistics64_rev3_t()
+        var vmStats = sundry_vm_statistics64_rev3_t()
         vmStats.wire_count = 2
         vmStats.purgeable_count = 3
         vmStats.compressor_page_count = 4
@@ -2169,8 +2170,8 @@ struct MetricsTests {
                "keep awake shortcut defaults to Ctrl+Opt+Cmd+K")
         expect(registeredDefaults[DefaultsKey.keepAwakeIconTint] as? String == KeepAwakeIconTint.orange.rawValue,
                "keep-awake active icon tint defaults to orange")
-        expect(registeredDefaults[DefaultsKey.keepAwakeActiveIcon] as? String == KeepAwakeActiveIcon.vorssaint.rawValue,
-               "keep-awake active icon defaults to the Vorssaint glyph")
+        expect(registeredDefaults[DefaultsKey.keepAwakeActiveIcon] as? String == KeepAwakeActiveIcon.sundry.rawValue,
+               "keep-awake active icon defaults to the Sundry glyph")
         expect(registeredDefaults[DefaultsKey.keepAwakeMouseJiggleEnabled] as? Bool == false,
                "Keep Awake mouse movement is opt-in")
         expect(registeredDefaults[DefaultsKey.keepAwakeMouseJiggleInterval] as? Int == 5,
@@ -2185,8 +2186,8 @@ struct MetricsTests {
                "invalid keep-awake active icon tint falls back to orange")
         expect(Defaults.sanitizedKeepAwakeActiveIcon("coffee") == .coffee,
                "valid keep-awake active icon is preserved")
-        expect(Defaults.sanitizedKeepAwakeActiveIcon("bad") == .vorssaint,
-               "invalid keep-awake active icon falls back to the Vorssaint glyph")
+        expect(Defaults.sanitizedKeepAwakeActiveIcon("bad") == .sundry,
+               "invalid keep-awake active icon falls back to the Sundry glyph")
         expect(KeepAwakeActiveIcon.eye.systemSymbolName == "eye.fill",
                "keep-awake eye option maps to its menu bar symbol")
         expect(!KeepAwakeAutomationSupport.hasExternalDisplay(builtInFlags: []),
@@ -2298,7 +2299,7 @@ struct MetricsTests {
         expect(registeredDefaults[DefaultsKey.switcherWindowShortcut] as? String
                == GlobalShortcut.switcherWindowDefault.storageValue,
                "switcher window shortcut defaults to Cmd+Grave")
-        let shortcutSuite = "vorss.tests.switcher.shortcut"
+        let shortcutSuite = "sundry.tests.switcher.shortcut"
         if let migrationDefaults = UserDefaults(suiteName: shortcutSuite) {
             migrationDefaults.removePersistentDomain(forName: shortcutSuite)
             migrationDefaults.set("control+option+command:50", forKey: DefaultsKey.switcherWindowShortcut)
@@ -2517,7 +2518,7 @@ struct MetricsTests {
         // scope must be assigned before the layout pass or a window-scoped
         // panel is sized for the grouped layout on its first frame.
         let switcherSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Switcher/AppSwitcher.swift",
+            contentsOfFile: "Sources/Sundry/Services/Switcher/AppSwitcher.swift",
             encoding: .utf8)) ?? ""
         // Ends on whatever declaration comes next rather than naming the
         // neighbour: a rename would find no separator, leave the slice running
@@ -2687,7 +2688,7 @@ struct MetricsTests {
                && windowlessEntry.windowLabel(noOpenWindow: "No open window") == "No open window",
                "App Switcher preview labels name a window or explain that there is none")
         let dockIconBundle = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorssaint-dock-icon-\(UUID().uuidString).app")
+            .appendingPathComponent("sundry-dock-icon-\(UUID().uuidString).app")
         let dockIconResources = dockIconBundle.appendingPathComponent("Contents/Resources")
         try? FileManager.default.createDirectory(at: dockIconResources,
                                                  withIntermediateDirectories: true)
@@ -3151,7 +3152,7 @@ struct MetricsTests {
             .prefix(24)).map(\.id) == ["right"],
                "windows on other monitors cannot exhaust the local display's entry limit")
         let enumeratorCode = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Switcher/WindowEnumerator.swift",
+            contentsOfFile: "Sources/Sundry/Services/Switcher/WindowEnumerator.swift",
             encoding: .utf8)) ?? ""
         let displayFilter = enumeratorCode.range(of: "SwitcherSupport.itemsOnDisplay(filtered,")
         let grouping = enumeratorCode.range(of: "SwitcherSupport.groupWindowsByApp(orderedPrimary)")
@@ -3304,7 +3305,7 @@ struct MetricsTests {
                                                                   DefaultsKey.monitorPwrTemperature,
                                                                   DefaultsKey.monitorSysBattery]),
                "preview appearance and moved battery visibility travel in settings backups")
-        let batteryVisibilitySuite = "com.vorssaint.tests.batteryVisibility.\(UUID().uuidString)"
+        let batteryVisibilitySuite = "com.sundry.tests.batteryVisibility.\(UUID().uuidString)"
         if let batteryVisibilityDefaults = UserDefaults(suiteName: batteryVisibilitySuite) {
             batteryVisibilityDefaults.removePersistentDomain(forName: batteryVisibilitySuite)
             batteryVisibilityDefaults.set(false, forKey: DefaultsKey.monitorSysTemps)
@@ -3445,7 +3446,7 @@ struct MetricsTests {
         // gesture from an ordinary one -- which is the thing being fixed, so a
         // branch is what this guards against.
         let placeSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Switcher/WindowActivator.swift",
+            contentsOfFile: "Sources/Sundry/Services/Switcher/WindowActivator.swift",
             encoding: .utf8)) ?? ""
         let placeBody = (placeSource.components(separatedBy: "static func place(_ item: SwitcherItem")
             .last ?? "").components(separatedBy: "\n    @discardableResult").first ?? ""
@@ -3471,7 +3472,7 @@ struct MetricsTests {
         // title both over the thumbnail and under it. In a panel every card
         // belongs to one app, so both said the same thing once per window.
         let dockPreviewCardSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Switcher/DockPreviewPanelView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Switcher/DockPreviewPanelView.swift",
             encoding: .utf8)) ?? ""
         let dockPreviewCardCode = dockPreviewCardSource
             .split(separator: "\n", omittingEmptySubsequences: false)
@@ -3598,9 +3599,9 @@ struct MetricsTests {
                "update intro page indicators follow the navigation order")
         expect(AppInfo.discordURL.absoluteString == "https://discord.gg/M6BwWH4BJp",
                "the community action uses the permanent Discord invitation")
-        expect(AppInfo.coffeeURL.absoluteString == "https://buymeacoffee.com/vorssaint",
+        expect(AppInfo.coffeeURL.absoluteString == "https://buymeacoffee.com/sundry",
                "financial support uses Buy Me a Coffee")
-        expect(AppInfo.socialURL.absoluteString == "https://x.com/vorssaint",
+        expect(AppInfo.socialURL.absoluteString == "https://x.com/sundry",
                "social previews keep the official X profile")
         // AppInfo.version falls back to "dev" in this bare harness, so read
         // the plist the shipped app will actually carry. The pin is a
@@ -3899,7 +3900,7 @@ struct MetricsTests {
         // These AppKit owners are not part of the pure-helper test binary, so
         // pin that neither caller can consume a parked status-item frame.
         let statusAnchorAppDelegateSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift",
+            contentsOfFile: "Sources/Sundry/App/AppDelegate.swift",
             encoding: .utf8)) ?? ""
         let stripCommentLines: (String) -> String = {
             $0.split(separator: "\n", omittingEmptySubsequences: false)
@@ -3913,7 +3914,7 @@ struct MetricsTests {
             .components(separatedBy: "ShelfService.shared.statusItemFrameProvider =").last ?? "")
             .components(separatedBy: "\n        }").first ?? "")
         let statusControllerSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/App/StatusItemController.swift",
+            contentsOfFile: "Sources/Sundry/App/StatusItemController.swift",
             encoding: .utf8)) ?? ""
         let statusHitTestCode = stripCommentLines((statusControllerSource
             .components(separatedBy: "func containsStatusItem(at screenPoint: NSPoint) -> Bool {").last ?? "")
@@ -3937,7 +3938,7 @@ struct MetricsTests {
         expect(popoverSetUpCode.contains("popover.hasFullSizeContent = true"),
                "the panel is hosted across the whole popover, arrow band included")
         let panelThemeSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Theme.swift",
+            contentsOfFile: "Sources/Sundry/UI/Theme.swift",
             encoding: .utf8)) ?? ""
         let panelGlassCode = stripCommentLines((panelThemeSource
             .components(separatedBy: "private struct PanelGlassSurface: View {").last ?? "")
@@ -3952,7 +3953,7 @@ struct MetricsTests {
                    && panelGlassCode.contains("Rectangle()\n            .fill(.regularMaterial)"),
                "both the standard and the Liquid Glass surface fill the whole balloon, no shape of their own")
         let panelViewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/MenuPanel/MenuPanelView.swift",
+            contentsOfFile: "Sources/Sundry/UI/MenuPanel/MenuPanelView.swift",
             encoding: .utf8)) ?? ""
         let panelBodyCode: (String) -> String = { header in
             stripCommentLines((panelViewSource.components(separatedBy: header).last ?? "")
@@ -4078,19 +4079,19 @@ struct MetricsTests {
                                                                   showsCountdown: true,
                                                                   hasEndDate: false),
                "idle, hidden and indefinite Keep Awake titles need no timer")
-        let statusPlacementSuite = "com.vorssaint.tests.statusItemPlacement"
+        let statusPlacementSuite = "com.sundry.tests.statusItemPlacement"
         if let statusDefaults = UserDefaults(suiteName: statusPlacementSuite) {
             statusDefaults.removePersistentDomain(forName: statusPlacementSuite)
             expect(StatusItemPlacementSupport.placementGeneration(in: statusDefaults) == 0,
                    "initial placement generation is 0")
-            expect(StatusItemPlacementSupport.mainAutosaveName(in: statusDefaults) == "VorssaintMenuBarItem",
+            expect(StatusItemPlacementSupport.mainAutosaveName(in: statusDefaults) == "SundryMenuBarItem",
                    "generation 0 uses base autosave name")
 
             // The coordinate macOS saves for the icon is what puts it back in
             // the same spot on the next launch. 3.3.3 deleted the one written
             // by the older recovery on every launch, which moved the icon to
             // where a first-time item goes and, on a full bar, out of sight.
-            let legacyKey = "NSStatusItem Preferred Position VorssaintMenuBarItem"
+            let legacyKey = "NSStatusItem Preferred Position SundryMenuBarItem"
             statusDefaults.set(64.0, forKey: legacyKey)
             StatusItemPlacementSupport.clearRememberedVisibility(in: statusDefaults)
             expect(statusDefaults.double(forKey: legacyKey) == 64.0,
@@ -4103,27 +4104,27 @@ struct MetricsTests {
 
             StatusItemPlacementSupport.bumpPlacementGeneration(in: statusDefaults)
             let gen1Name = StatusItemPlacementSupport.mainAutosaveName(in: statusDefaults)
-            expect(gen1Name == "VorssaintMenuBarItem.1",
+            expect(gen1Name == "SundryMenuBarItem.1",
                    "bumped generation produces numbered autosave name")
-            expect(statusDefaults.object(forKey: "NSStatusItem Preferred Position VorssaintMenuBarItem.1") == nil,
+            expect(statusDefaults.object(forKey: "NSStatusItem Preferred Position SundryMenuBarItem.1") == nil,
                    "bumpPlacementGeneration does not seed any hardcoded preferred position")
 
             // Recovery keeps the spot the person arranged and only drops the
             // hidden state macOS remembered: an item that starts over with no
             // saved position is born against the notch, the first place a
             // crowded bar hides.
-            let gen1Position = "NSStatusItem Preferred Position VorssaintMenuBarItem.1"
+            let gen1Position = "NSStatusItem Preferred Position SundryMenuBarItem.1"
             statusDefaults.set(280.0, forKey: gen1Position)
-            statusDefaults.set(false, forKey: "NSStatusItem Visible VorssaintMenuBarItem.1")
-            statusDefaults.set(false, forKey: "NSStatusItem VisibleCC VorssaintMenuBarItem.1")
+            statusDefaults.set(false, forKey: "NSStatusItem Visible SundryMenuBarItem.1")
+            statusDefaults.set(false, forKey: "NSStatusItem VisibleCC SundryMenuBarItem.1")
             StatusItemPlacementSupport.clearRememberedVisibility(in: statusDefaults)
             expect(statusDefaults.double(forKey: gen1Position) == 280.0,
                    "clearing the remembered visibility keeps the arranged position")
             expect(StatusItemPlacementSupport.placementGeneration(in: statusDefaults) == 1
                     && StatusItemPlacementSupport.mainAutosaveName(in: statusDefaults) == gen1Name,
                    "recovery leaves the item's identity alone, so reopening cannot churn it")
-            expect(statusDefaults.object(forKey: "NSStatusItem Visible VorssaintMenuBarItem.1") == nil
-                    && statusDefaults.object(forKey: "NSStatusItem VisibleCC VorssaintMenuBarItem.1") == nil,
+            expect(statusDefaults.object(forKey: "NSStatusItem Visible SundryMenuBarItem.1") == nil
+                    && statusDefaults.object(forKey: "NSStatusItem VisibleCC SundryMenuBarItem.1") == nil,
                    "clearing the remembered visibility drops both spellings macOS has used")
 
             // Giving the spot up is what an explicit recovery escalates to,
@@ -4134,7 +4135,7 @@ struct MetricsTests {
             StatusItemPlacementSupport.bumpPlacementGeneration(in: statusDefaults)
             expect(statusDefaults.object(forKey: gen1Position) == nil
                     && StatusItemPlacementSupport.mainAutosaveName(in: statusDefaults)
-                        == "VorssaintMenuBarItem.2",
+                        == "SundryMenuBarItem.2",
                    "the identity reset does give the saved position up")
             statusDefaults.removePersistentDomain(forName: statusPlacementSuite)
         }
@@ -4455,7 +4456,7 @@ struct MetricsTests {
         // symbols rather than on the private member holding them, so renaming
         // it stays green and dropping the ASCII-capable lookup goes red.
         let shortcutSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Core/GlobalShortcut.swift",
+            contentsOfFile: "Sources/Sundry/Core/GlobalShortcut.swift",
             encoding: .utf8)) ?? ""
         let shortcutCode = shortcutSource.split(separator: "\n", omittingEmptySubsequences: false)
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -4682,7 +4683,7 @@ struct MetricsTests {
 
         // MARK: WhatsApp downloads
 
-        let whatsAppEnabledSuite = "vorss.tests.whatsapp.enabled"
+        let whatsAppEnabledSuite = "sundry.tests.whatsapp.enabled"
         if let migrationDefaults = UserDefaults(suiteName: whatsAppEnabledSuite) {
             migrationDefaults.removePersistentDomain(forName: whatsAppEnabledSuite)
             Defaults.migrateWhatsAppDownloadsEnabled(in: migrationDefaults)
@@ -4975,7 +4976,7 @@ struct MetricsTests {
         expect(CleanerSupport.isProtectedBundleID("com.apple.Music")
                && CleanerSupport.isProtectedBundleID("com.apple")
                && CleanerSupport.isProtectedBundleID("group.com.apple.notes")
-               && CleanerSupport.isProtectedBundleID("com.vorssaint.utils"),
+               && CleanerSupport.isProtectedBundleID("com.sundry.utils"),
                "system domains and this app can never be junk owners")
         expect(!CleanerSupport.isProtectedBundleID("com.vendor.editor"),
                "third party identifiers are eligible for the leftover check")
@@ -4988,7 +4989,7 @@ struct MetricsTests {
                && UninstallerSupport.verifiedBundleID("") == nil
                && UninstallerSupport.verifiedBundleID("plain-name") == nil
                && UninstallerSupport.verifiedBundleID("com.vendor../escape") == nil
-               && UninstallerSupport.verifiedBundleID("com.vorssaint.utils") == nil
+               && UninstallerSupport.verifiedBundleID("com.sundry.utils") == nil
                && UninstallerSupport.verifiedBundleID("com.apple.system") == nil,
                "malformed, protected and current app identifiers never enter uninstall paths")
         let uninstallAppURL = URL(fileURLWithPath: "/Applications/Editor.app")
@@ -5232,7 +5233,7 @@ struct MetricsTests {
                && spotlightLaunchIdentity.nameTokens.isEmpty,
                "Spotlight preserves signed-group and technical-only rules for sensitive roots")
         let safetyFixture = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorssaint-uninstaller-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("sundry-uninstaller-\(UUID().uuidString)", isDirectory: true)
         let safetyRoot = safetyFixture.appendingPathComponent("root", isDirectory: true)
         let outsideRoot = safetyFixture.appendingPathComponent("outside", isDirectory: true)
         let safeFile = safetyRoot.appendingPathComponent("safe.plist")
@@ -5268,7 +5269,7 @@ struct MetricsTests {
         // walk. JunkCleaner is not part of this test binary, so pin the gate
         // and the premise that makes an empty oracle safe at their source.
         let junkCleanerSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Cleaner/JunkCleaner.swift",
+            contentsOfFile: "Sources/Sundry/Services/Cleaner/JunkCleaner.swift",
             encoding: .utf8)) ?? ""
         let cleanSelectedBody = sourceBody(of: junkCleanerSource, from: "func cleanSelected(",
                                            to: "private static func mayRemove")
@@ -5291,7 +5292,7 @@ struct MetricsTests {
         // binary either, so pin the gate that keeps a removal that cannot claim
         // shared data from paying for the roster.
         let appUninstallerSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Uninstall/AppUninstaller.swift",
+            contentsOfFile: "Sources/Sundry/Services/Uninstall/AppUninstaller.swift",
             encoding: .utf8)) ?? ""
         let removeSelectedBody = sourceBody(of: appUninstallerSource, from: "func removeSelected()",
                                             to: "func removeSelectedWithHomebrew()")
@@ -5341,7 +5342,7 @@ struct MetricsTests {
                && CleanerSupport.isProtectedBundleID("243LU875E5.groups.com.apple.podcasts")
                && CleanerSupport.isProtectedBundleID("developer.apple.wwdc")
                && CleanerSupport.isProtectedBundleID("is.workflow.my.app")
-               && CleanerSupport.isProtectedBundleID("vorss.tests.switcher.shortcut"),
+               && CleanerSupport.isProtectedBundleID("sundry.tests.switcher.shortcut"),
                "system domains stay protected in every wrapping, team prefixes included")
         expect(CleanerSupport.sharedInfrastructurePrefixes.allSatisfy {
                    CleanerSupport.isProtectedBundleID($0)
@@ -5388,8 +5389,8 @@ struct MetricsTests {
             ((try? String(contentsOfFile: path, encoding: .utf8)) ?? "")
                 .split(whereSeparator: \.isWhitespace).joined()
         }
-        let schedulerCode = compact("Sources/Vorssaint/Services/Cleaner/CleanerScheduler.swift")
-        let cleanerViewCode = compact("Sources/Vorssaint/UI/Cleaner/CleanerView.swift")
+        let schedulerCode = compact("Sources/Sundry/Services/Cleaner/CleanerScheduler.swift")
+        let cleanerViewCode = compact("Sources/Sundry/UI/Cleaner/CleanerView.swift")
         expect(schedulerCode.components(separatedBy: "cleanSelected(").count == 2
                && schedulerCode.contains("cleanSelected(escalate:false)")
                && schedulerCode.contains("notifyIfWanted(freed:freed,failed:failed)"),
@@ -5530,7 +5531,7 @@ struct MetricsTests {
             exceptions: ["com.example.unrelated"]
         ), "AutoQuit does not protect a generated guest app without its host exception")
         let outerApp = FileManager.default.temporaryDirectory
-            .appendingPathComponent("VorssaintAutoQuitTests-\(UUID().uuidString)")
+            .appendingPathComponent("SundryAutoQuitTests-\(UUID().uuidString)")
             .appendingPathComponent("Container.app")
         let nestedApp = outerApp.appendingPathComponent("Contents/MacOS/WindowHost.app")
         try? FileManager.default.createDirectory(at: nestedApp.appendingPathComponent("Contents"),
@@ -5691,7 +5692,7 @@ struct MetricsTests {
         expect(!AutoQuitSupport.isWindowNotificationRegistered(.cannotComplete),
                "a window whose registration was refused is not watched")
         let autoQuitServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/AutoQuit/AutoQuitService.swift",
+            contentsOfFile: "Sources/Sundry/Services/AutoQuit/AutoQuitService.swift",
             encoding: .utf8)) ?? ""
         let autoQuitServiceLines = autoQuitServiceSource.components(separatedBy: "\n")
         func autoQuitServiceCodeLines(containing fragment: String) -> [Int] {
@@ -5768,7 +5769,7 @@ struct MetricsTests {
         // first: the note above the probe names the attribute it avoids, and a
         // check that cannot tell prose from a call would go red for it.
         let autoQuitServiceCode = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/AutoQuit/AutoQuitService.swift",
+            contentsOfFile: "Sources/Sundry/Services/AutoQuit/AutoQuitService.swift",
             encoding: .utf8)) ?? "")
             .components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -6958,7 +6959,7 @@ struct MetricsTests {
         // suite has existed.
         var scratchPaths: [URL] = []
         let uniqueDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorssaint-media-unique-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("sundry-media-unique-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: uniqueDir, withIntermediateDirectories: true)
         scratchPaths.append(uniqueDir)
         let firstImageOutput = MediaSupport.uniqueOutputURL(in: uniqueDir, baseName: "Export", fileExtension: "png")
@@ -7119,7 +7120,7 @@ struct MetricsTests {
                == "/tmp/Output.gif",
                "Media GIF output falls back when the visible source name is empty")
         let mediaVisibilityDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorssaint-media-visibility-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("sundry-media-visibility-\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: mediaVisibilityDir,
                                                  withIntermediateDirectories: true)
         scratchPaths.append(mediaVisibilityDir)
@@ -7227,7 +7228,7 @@ struct MetricsTests {
                "headphone disconnect protection lowers the speakers, it never silences them")
         expect(Defaults.sanitizedMixerHeadphonesDisconnectVolumePercent(105) == 100,
                "headphone disconnect volume clamps high values")
-        let headphonesSuite = "vorss.tests.mixer.headphones"
+        let headphonesSuite = "sundry.tests.mixer.headphones"
         if let silentHeadphoneVolume = UserDefaults(suiteName: headphonesSuite) {
             silentHeadphoneVolume.removePersistentDomain(forName: headphonesSuite)
             silentHeadphoneVolume.set(0, forKey: DefaultsKey.mixerHeadphonesDisconnectVolumePercent)
@@ -7606,7 +7607,7 @@ struct MetricsTests {
         // pool, which is issue #971's exhaustion. Read as source text because
         // the engine lives in a file the test target does not compile.
         let mixerCode = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Audio/AppVolumeMixer.swift",
+            contentsOfFile: "Sources/Sundry/Services/Audio/AppVolumeMixer.swift",
             encoding: .utf8)) ?? ""
         let teardownQueueSetup = mixerCode.range(of: "let teardownQueue").flatMap { start in
             mixerCode.range(of: "}()", range: start.upperBound..<mixerCode.endIndex)
@@ -8664,7 +8665,7 @@ struct MetricsTests {
         expect(ShelfDockDragSupport.hasDwelled(since: 100.0, now: 100.16, required: 0.15),
                "sustained hover over 150ms counts as dwelled")
         let shelfServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Shelf/ShelfService.swift",
+            contentsOfFile: "Sources/Sundry/Services/Shelf/ShelfService.swift",
             encoding: .utf8)) ?? ""
         let dockedWatchdog = shelfServiceSource
             .components(separatedBy: "private func startDockedWatchdog()")
@@ -8679,10 +8680,10 @@ struct MetricsTests {
             .components(separatedBy: "func hide()")
             .dropFirst().first?.components(separatedBy: "\n    func close").first ?? ""
         let shelfViewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Shelf/ShelfView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Shelf/ShelfView.swift",
             encoding: .utf8)) ?? ""
         let dockedShelfViewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Shelf/ShelfDropZoneView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Shelf/ShelfDropZoneView.swift",
             encoding: .utf8)) ?? ""
         expect(explicitShelfClose.contains("DefaultsKey.shelfClearOnClose")
                 && explicitShelfClose.contains("clear()")
@@ -9327,7 +9328,7 @@ struct MetricsTests {
         // that delegate's deinit is what deletes the scratch file, so the
         // release path has to invalidate the session too.
         let showcaseSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Update/UpdateShowcaseMedia.swift",
+            contentsOfFile: "Sources/Sundry/Services/Update/UpdateShowcaseMedia.swift",
             encoding: .utf8)) ?? ""
         let showcaseDeinitBody = (showcaseSource.components(separatedBy: "\n    deinit {")
             .dropFirst().first ?? "").components(separatedBy: "\n    }").first ?? ""
@@ -9853,13 +9854,13 @@ struct MetricsTests {
         expect(UpdateInstallerSupport.installFailureCode(fromMarker: "") == nil,
                "an empty marker is not a failure")
         expect(UpdateInstallerSupport.runsFromImmutableLocation(
-                   appPath: "/private/var/folders/ab/xyz/T/AppTranslocation/1F2/d/Vorssaint.app",
+                   appPath: "/private/var/folders/ab/xyz/T/AppTranslocation/1F2/d/Sundry.app",
                    volumeIsReadOnly: { _ in false }),
                "translocated apps are flagged as not updatable in place")
-        expect(UpdateInstallerSupport.runsFromImmutableLocation(appPath: "/Volumes/Vorssaint/Vorssaint.app",
+        expect(UpdateInstallerSupport.runsFromImmutableLocation(appPath: "/Volumes/Sundry/Sundry.app",
                                                                 volumeIsReadOnly: { _ in true }),
                "apps on a read-only volume (the DMG) are flagged as not updatable in place")
-        expect(!UpdateInstallerSupport.runsFromImmutableLocation(appPath: "/Volumes/ExternalSSD/Vorssaint.app",
+        expect(!UpdateInstallerSupport.runsFromImmutableLocation(appPath: "/Volumes/ExternalSSD/Sundry.app",
                                                                  volumeIsReadOnly: { _ in false }),
                "apps on a writable external volume stay updatable in place")
         let installerScript = UpdateInstallerSupport.installerScript()
@@ -9892,8 +9893,8 @@ struct MetricsTests {
                 && !installerScript.contains("note() { /bin/echo \"$1\" > \"$RESULT.progress\""),
                "elevated marker writes drop to the original user's credentials")
         let elevated = UpdateInstallerSupport.elevatedInstallCommand(
-            appPath: "/Applications/Vorssaint.app",
-            dmgPath: "/tmp/Vorssaint-update.dmg",
+            appPath: "/Applications/Sundry.app",
+            dmgPath: "/tmp/Sundry-update.dmg",
             pid: 123,
             resultPath: "/tmp/result",
             uid: 501,
@@ -9902,7 +9903,7 @@ struct MetricsTests {
                "elevated installer leaves this app's session so it outlives the app it replaces")
         expect(elevated.contains("nohup"),
                "elevated installer keeps the nohup fallback if setsid is unavailable")
-        expect(elevated.contains("'/Applications/Vorssaint.app'"),
+        expect(elevated.contains("'/Applications/Sundry.app'"),
                "elevated installer passes the app path quoted for the shell")
         expect(elevated.contains("'3.3.3'"),
                "elevated installer passes the expected version quoted for the shell")
@@ -9917,7 +9918,7 @@ struct MetricsTests {
         // is the payload's own. Every `exit 1` inside the installer script would
         // otherwise start the whole installer a second time, as root.
         let detachRoot = FileManager.default.temporaryDirectory
-            .appendingPathComponent("VorssaintDetachTests-\(UUID().uuidString)")
+            .appendingPathComponent("SundryDetachTests-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: detachRoot, withIntermediateDirectories: true)
         let detachPayload = detachRoot.appendingPathComponent("payload.sh")
         let detachLedger = detachRoot.appendingPathComponent("runs")
@@ -9964,7 +9965,7 @@ struct MetricsTests {
         // the same. 0/1/2 must still be open (on /dev/null), or the child's
         // first open() takes stdout's slot.
         let fdRoot = FileManager.default.temporaryDirectory
-            .appendingPathComponent("VorssaintDetachFDTests-\(UUID().uuidString)")
+            .appendingPathComponent("SundryDetachFDTests-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: fdRoot, withIntermediateDirectories: true)
         let fdHolder = fdRoot.appendingPathComponent("holder")
         let fdReport = fdRoot.appendingPathComponent("report")
@@ -10029,8 +10030,8 @@ struct MetricsTests {
                "beta is not newer than the released final version")
 
         // Release candidate selection
-        let dummyDMG = URL(string: "https://github.com/vorssaint/vorssaint-utils/releases/download/v3.3.4/Vorssaint.dmg")!
-        let dummyBetaDMG = URL(string: "https://github.com/vorssaint/vorssaint-utils/releases/download/v3.3.4-beta.1/Vorssaint.dmg")!
+        let dummyDMG = URL(string: "https://github.com/reply898989/sundry/releases/download/v3.3.4/Sundry.dmg")!
+        let dummyBetaDMG = URL(string: "https://github.com/reply898989/sundry/releases/download/v3.3.4-beta.1/Sundry.dmg")!
 
         let candidateList = [
             UpdateServiceSupport.ReleaseCandidate(tagName: "v3.3.4-beta.1", isPrerelease: true, isDraft: false, dmgURL: dummyBetaDMG, dmgExpectedBytes: 1000, body: "Beta notes"),
@@ -10059,8 +10060,8 @@ struct MetricsTests {
         expect(Defaults.registeredDefaults[DefaultsKey.includeBetaUpdates] as? Bool == false,
                "includeBetaUpdates defaults to false in registeredDefaults")
 
-        let testDefaults = UserDefaults(suiteName: "com.vorssaint.tests.betaActivation")!
-        testDefaults.removePersistentDomain(forName: "com.vorssaint.tests.betaActivation")
+        let testDefaults = UserDefaults(suiteName: "com.sundry.tests.betaActivation")!
+        testDefaults.removePersistentDomain(forName: "com.sundry.tests.betaActivation")
         Defaults.activateBetaChannelIfRunningBeta(in: testDefaults, version: "3.3.3-beta.1")
         expect(testDefaults.bool(forKey: DefaultsKey.includeBetaUpdates) == true,
                "beta channel is activated automatically on a beta build")
@@ -10070,13 +10071,13 @@ struct MetricsTests {
                "manual opt-out on a beta build is preserved across launches")
 
         // Stable version does not activate beta channel
-        let stableDefaults = UserDefaults(suiteName: "com.vorssaint.tests.stableActivation")!
-        stableDefaults.removePersistentDomain(forName: "com.vorssaint.tests.stableActivation")
+        let stableDefaults = UserDefaults(suiteName: "com.sundry.tests.stableActivation")!
+        stableDefaults.removePersistentDomain(forName: "com.sundry.tests.stableActivation")
         Defaults.activateBetaChannelIfRunningBeta(in: stableDefaults, version: "3.3.3")
         expect(stableDefaults.object(forKey: DefaultsKey.includeBetaUpdates) == nil,
                "stable release does not touch beta channel default")
-        stableDefaults.removePersistentDomain(forName: "com.vorssaint.tests.stableActivation")
-        testDefaults.removePersistentDomain(forName: "com.vorssaint.tests.betaActivation")
+        stableDefaults.removePersistentDomain(forName: "com.sundry.tests.stableActivation")
+        testDefaults.removePersistentDomain(forName: "com.sundry.tests.betaActivation")
 
         // Localization completeness & formatting
         for language in AppLanguage.allCases {
@@ -10121,7 +10122,7 @@ struct MetricsTests {
         // what the service does with the third state is pinned by source. Both
         // needles are public symbols, not a line's spelling.
         let launchAtLoginSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/LaunchAtLogin.swift",
+            contentsOfFile: "Sources/Sundry/Services/LaunchAtLogin.swift",
             encoding: .utf8)) ?? ""
         expect(launchAtLoginSource.contains(".requiresApproval"),
                "an approval-pending login item is read as its own state")
@@ -10264,7 +10265,7 @@ struct MetricsTests {
                 autohide: true),
                "an auto-hiding Dock still arms the visibility watcher the first time")
         let dockPreviewServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/DockPreview/DockPreviewService.swift",
+            contentsOfFile: "Sources/Sundry/Services/DockPreview/DockPreviewService.swift",
             encoding: .utf8)) ?? ""
         let dockPreviewServiceCode = dockPreviewServiceSource
             .split(separator: "\n", omittingEmptySubsequences: false)
@@ -10334,12 +10335,12 @@ struct MetricsTests {
         // Both panels show windows of the same kind, so a name too long for its
         // room behaves the same in each. One view, two callers, two widths.
         let scrollingTitleSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Switcher/ScrollingTitle.swift",
+            contentsOfFile: "Sources/Sundry/UI/Switcher/ScrollingTitle.swift",
             encoding: .utf8)) ?? ""
         expect(scrollingTitleSource.contains("struct ScrollingTitle: View"),
                "the scrolling name is one view, not a copy in each panel")
         let switcherCardSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Switcher/SwitcherView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Switcher/SwitcherView.swift",
             encoding: .utf8)) ?? ""
         expect(switcherCardSource.contains("ScrollingTitle(")
                && dockPreviewCardSource.contains("ScrollingTitle("),
@@ -10756,7 +10757,7 @@ struct MetricsTests {
         // rather than the bare call it replaced. Asserted positively: the call
         // it must not use is named in the doc comment right above it.
         let dockClickSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/DockClick/DockClickService.swift",
+            contentsOfFile: "Sources/Sundry/Services/DockClick/DockClickService.swift",
             encoding: .utf8)) ?? ""
         expect(dockClickSource.contains("ActivationHandoff.yield(to: app)"),
                "a Dock click restore yields this app's activation first")
@@ -10767,7 +10768,7 @@ struct MetricsTests {
         // and every yield goes through it. A bare yield added on a new path
         // would bring the refused-handoff bug back on that path alone.
         let activationHandoffSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/ActivationHandoff.swift",
+            contentsOfFile: "Sources/Sundry/Services/ActivationHandoff.swift",
             encoding: .utf8)) ?? ""
         let selfActivation = activationHandoffSource.range(of: "NSApp.activate(ignoringOtherApps: true)")
         let yieldOnward = activationHandoffSource.range(of: "NSApp.yieldActivation(to: app)")
@@ -10779,9 +10780,9 @@ struct MetricsTests {
                 && handoffStamp!.lowerBound < selfActivation!.lowerBound,
                "the activation handoff stamps the self-activation before asking for it")
         // Only the activation the handoff caused stays out of the history; the
-        // Dock icon, Settings and Vorssaint's own windows are real uses.
+        // Dock icon, Settings and Sundry's own windows are real uses.
         let useTrackerSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Switcher/WindowUseTracker.swift",
+            contentsOfFile: "Sources/Sundry/Services/Switcher/WindowUseTracker.swift",
             encoding: .utf8)) ?? ""
         expect(useTrackerSource.contains(
                    "pid == ProcessInfo.processInfo.processIdentifier && ActivationHandoff.isHandingOff"),
@@ -11017,8 +11018,8 @@ struct MetricsTests {
                "a click after hiding lets the Dock bring the app back")
         expect(DockClickSupport.repeatDecision(lastAction: .hide, elapsed: 0.1) == .swallow,
                "an accidental double-click never hides and immediately reopens the app")
-        expect(DockClickSupport.isOwnBundleIdentifier("com.vorssaint.utils")
-                && DockClickSupport.isOwnBundleIdentifier("com.vorssaint.utils.dev")
+        expect(DockClickSupport.isOwnBundleIdentifier("com.sundry.utils")
+                && DockClickSupport.isOwnBundleIdentifier("com.sundry.utils.dev")
                 && !DockClickSupport.isOwnBundleIdentifier("com.example.editor")
                 && !DockClickSupport.isOwnBundleIdentifier(nil),
                "Dock clicks never target either build of this app")
@@ -11152,7 +11153,7 @@ struct MetricsTests {
                && DockPreviewSupport.mouseMoveSampleInterval < DockPreviewSupport.switchDelay,
                "Dock Preview samples high-rate mouse movement faster than hover intent")
         let dockPreviewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/DockPreview/DockPreviewService.swift",
+            contentsOfFile: "Sources/Sundry/Services/DockPreview/DockPreviewService.swift",
             encoding: .utf8)) ?? ""
         expect(dockPreviewSource.contains("DockClickSupport.dockOwnsPoint("),
                "Dock Preview does not open through fullscreen content covering the Dock")
@@ -12650,7 +12651,7 @@ struct MetricsTests {
                "App Switcher leaves unrelated middle-mouse-up events alone")
         let searchRecords = [
             SwitcherSearchRecord(id: "alpha", title: "Inbox", appName: "Alpha"),
-            SwitcherSearchRecord(id: "beta", title: "Vorssaint Roadmap", appName: "Beta"),
+            SwitcherSearchRecord(id: "beta", title: "Sundry Roadmap", appName: "Beta"),
             SwitcherSearchRecord(id: "gamma", title: "Café notes", appName: "Gamma"),
         ]
         expect(SwitcherSupport.filteredSearchIDs(records: searchRecords, query: "") == ["alpha", "beta", "gamma"],
@@ -12690,7 +12691,7 @@ struct MetricsTests {
         ![Menu bar temperature metrics](Resources/Images/menu-bar-temperature-metrics.png)
 
         ### Website
-        - Official site: [vorssaint.com](https://vorssaint.com).
+        - Official site: [sundry.app](https://sundry.app).
 
         ## [2.17.1] - 2026-06-17
 
@@ -12733,7 +12734,7 @@ struct MetricsTests {
         ### Fixed
         - Update preview stays focused on changes.
 
-        Signed with an Apple Developer ID and notarized by Apple, so it downloads and opens normally. Requires macOS 14 or later. Open the .dmg below and drag Vorssaint to Applications.
+        Signed with an Apple Developer ID and notarized by Apple, so it downloads and opens normally. Requires macOS 14 or later. Open the .dmg below and drag Sundry to Applications.
         """
         let inAppUpdateBody = ReleaseNotes.inAppUpdateNotes(from: githubReleaseBodyWithFooter) ?? ""
         expect(!inAppUpdateBody.contains("Signed with an Apple Developer ID"),
@@ -12791,7 +12792,7 @@ struct MetricsTests {
         // travel as `prompt:` and the label has to be hidden for a field to
         // own its whole row.
         let urlCleanerSettingsSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/URLCleanerSettings.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/URLCleanerSettings.swift",
             encoding: .utf8)) ?? ""
         expect(!urlCleanerSettingsSource.contains("TextField(l10n.s."),
                "no Clean URL field spends its row on a label instead of the field")
@@ -12901,7 +12902,7 @@ struct MetricsTests {
         // MARK: Homebrew command building and parsing
 
         let homebrewManagerSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Homebrew/HomebrewManager.swift",
+            contentsOfFile: "Sources/Sundry/Services/Homebrew/HomebrewManager.swift",
             encoding: .utf8)) ?? ""
         let homebrewRunStreaming = homebrewManagerSource.components(separatedBy: "func runStreaming(")
             .dropFirst().first?.components(separatedBy: "private func appendLog").first ?? ""
@@ -12969,7 +12970,7 @@ struct MetricsTests {
         // after a failed operation too. Read from the source: the refresh happens
         // inside a completion closure that no unit test can drive.
         let managerSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Homebrew/HomebrewManager.swift",
+            contentsOfFile: "Sources/Sundry/Services/Homebrew/HomebrewManager.swift",
             encoding: .utf8)) ?? ""
         expect(!managerSource.isEmpty, "HomebrewManager source is readable for the refresh checks")
         let managerCode = managerSource
@@ -13277,7 +13278,7 @@ struct MetricsTests {
         // straight, and eleven quoted a setting with straight pairs instead of
         // the marks their language uses.
         var typewriterMarks: [String] = []
-        for folder in ["Sources/Vorssaint/Core", "Sources/Vorssaint/Core/Localizations"] {
+        for folder in ["Sources/Sundry/Core", "Sources/Sundry/Core/Localizations"] {
             for name in (try? FileManager.default.contentsOfDirectory(atPath: folder)) ?? [] {
                 guard name.hasSuffix("Strings.swift") || name.hasPrefix("Strings+")
                         || name == "Localization.swift" else { continue }
@@ -13312,12 +13313,12 @@ struct MetricsTests {
             return lines[start..<end]
         }
         var breakingFrench: [String] = []
-        var frenchSources = ["Sources/Vorssaint/Core/Localizations/Strings+French.swift"]
+        var frenchSources = ["Sources/Sundry/Core/Localizations/Strings+French.swift"]
         frenchSources += ((try? FileManager.default
-            .contentsOfDirectory(atPath: "Sources/Vorssaint/Core")) ?? [])
+            .contentsOfDirectory(atPath: "Sources/Sundry/Core")) ?? [])
             .filter { $0.hasSuffix("Strings.swift") }
             .sorted()
-            .map { "Sources/Vorssaint/Core/" + $0 }
+            .map { "Sources/Sundry/Core/" + $0 }
         for path in frenchSources {
             for line in frenchLines(path) {
                 guard !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") else { continue }
@@ -13332,7 +13333,7 @@ struct MetricsTests {
         }
         expect(breakingFrench.isEmpty,
                "French keeps its punctuation on the line it belongs to (\(Set(breakingFrench).sorted().prefix(4).joined(separator: ", ")))")
-        let themeSource = (try? String(contentsOfFile: "Sources/Vorssaint/UI/Theme.swift",
+        let themeSource = (try? String(contentsOfFile: "Sources/Sundry/UI/Theme.swift",
                                        encoding: .utf8)) ?? ""
         let raisedReads = themeSource
             .components(separatedBy: "accessibilityDisplayShouldIncreaseContrast").count - 1
@@ -13366,7 +13367,7 @@ struct MetricsTests {
         // mounted one, an attached disk image answered with an error on every
         // sample; the bulk fetch no longer carries the key at all.
         let samplerCode = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Metrics/DiskSampler.swift",
+            contentsOfFile: "Sources/Sundry/Services/Metrics/DiskSampler.swift",
             encoding: .utf8)) ?? "")
             .components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -13730,7 +13731,7 @@ struct MetricsTests {
         expect(bundleLocalizations.contains("tr"), "Info.plist declares Turkish as a bundle localization")
         expect(bundleLocalizations.contains("ko"), "Info.plist declares Korean as a bundle localization")
         let baseAudioPrompt = infoPlist?["NSAudioCaptureUsageDescription"] as? String ?? ""
-        expect(baseAudioPrompt.contains("Vorssaint uses each app's audio"),
+        expect(baseAudioPrompt.contains("Sundry uses each app's audio"),
                "base audio permission prompt is an English fallback")
         let organizerFolderPromptKeys = [
             "NSDesktopFolderUsageDescription", "NSDocumentsFolderUsageDescription",
@@ -13878,10 +13879,10 @@ struct MetricsTests {
         // that is registered under the other name, and fan control would just
         // never answer.
         let helperTemplate = (try? String(
-            contentsOfFile: "Resources/com.vorssaint.utils.fan-control.plist",
+            contentsOfFile: "Resources/com.sundry.utils.fan-control.plist",
             encoding: .utf8)) ?? ""
         expect(!helperTemplate.isEmpty, "the helper template reads back")
-        let releaseHelperID = "com.vorssaint.utils.fan-control"
+        let releaseHelperID = "com.sundry.utils.fan-control"
         let mentions = helperTemplate.components(separatedBy: releaseHelperID).count - 1
         expect(mentions == 3,
                "the helper template names the release service exactly where the build rewrites it (\(mentions))")
@@ -13971,9 +13972,9 @@ struct MetricsTests {
         let ownershipGuards = ["isShelfOwnedFile", "discardablePaths", "ownedPayloadURLs",
                                "isRegularFile", "tempDir", "legacyDir", "root", "uuidString",
                                "storeRoot", "contentsOfDirectory"]
-        for path in ["Sources/Vorssaint/Services/Shelf/ShelfService.swift",
-                     "Sources/Vorssaint/Services/QuickTools/RecentCaptureService.swift",
-                     "Sources/Vorssaint/Services/QuickTools/RecentCaptureStore.swift"] {
+        for path in ["Sources/Sundry/Services/Shelf/ShelfService.swift",
+                     "Sources/Sundry/Services/QuickTools/RecentCaptureService.swift",
+                     "Sources/Sundry/Services/QuickTools/RecentCaptureStore.swift"] {
             let lines = ((try? String(contentsOfFile: path, encoding: .utf8)) ?? "")
                 .components(separatedBy: "\n")
             expect(!lines.isEmpty, "the store source reads back for its deletion check")
@@ -14415,7 +14416,7 @@ struct MetricsTests {
         // 2s window made the gesture impossible for anyone pressing Escape
         // slower than once per two seconds (#697).
         let cleaningSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/CleaningMode/CleaningModeManager.swift",
+            contentsOfFile: "Sources/Sundry/Services/CleaningMode/CleaningModeManager.swift",
             encoding: .utf8)) ?? ""
         let cleaningCode = cleaningSource
             .components(separatedBy: "\n")
@@ -14711,7 +14712,7 @@ struct MetricsTests {
             "appManagement",
         ], "permission portal contains every supported permission")
         let onboardingViewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Onboarding/OnboardingView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Onboarding/OnboardingView.swift",
             encoding: .utf8)) ?? ""
         let additionalPermissionsAlignment =
             #"DisclosureGroup\(isExpanded: \$showingOtherPermissions\) \{\s+"#
@@ -14771,10 +14772,10 @@ struct MetricsTests {
                "no first-run preset installs a feature whose hardware the Mac may lack")
 
         let featureHubSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/FeatureHubSettings.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/FeatureHubSettings.swift",
             encoding: .utf8)) ?? ""
         let onboardingFeatureSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Onboarding/OnboardingView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Onboarding/OnboardingView.swift",
             encoding: .utf8)) ?? ""
         expect(featureHubSource.contains("installBlockedReason")
                 && onboardingFeatureSource.contains("installBlockedReason"),
@@ -15158,7 +15159,7 @@ struct MetricsTests {
                 && decodedLegacyFanSnapshot?.temperatures == nil,
                "fan snapshots remain compatible with an older installed helper")
 
-        let fanMigrationSuite = "com.vorssaint.tests.fan-migration.\(UUID().uuidString)"
+        let fanMigrationSuite = "com.sundry.tests.fan-migration.\(UUID().uuidString)"
         if let fanMigration = UserDefaults(suiteName: fanMigrationSuite) {
             fanMigration.set(true, forKey: DefaultsKey.monitorShowFanControlBeta)
             Defaults.migrateFanControlVisibility(in: fanMigration)
@@ -15598,7 +15599,7 @@ struct MetricsTests {
                "WindowServer is protected")
         expect(KillProcessSupport.isProtected(pid: 9999, name: "loginwindow", path: "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow"),
                "loginwindow is protected")
-        expect(KillProcessSupport.isProtected(pid: ProcessInfo.processInfo.processIdentifier, name: "Vorssaint"),
+        expect(KillProcessSupport.isProtected(pid: ProcessInfo.processInfo.processIdentifier, name: "Sundry"),
                "current app PID is protected")
         expect(!KillProcessSupport.isProtected(pid: 12345, name: "Safari", path: "/Applications/Safari.app/Contents/MacOS/Safari"),
                "ordinary user app is not protected")
@@ -15819,7 +15820,7 @@ struct MetricsTests {
                    !$0.permissions.contains(.accessibility)
                },
                "battery and quiet needs no accessibility permission at all")
-        let firstRunSuiteName = "com.vorssaint.tests.first-run.\(UUID().uuidString)"
+        let firstRunSuiteName = "com.sundry.tests.first-run.\(UUID().uuidString)"
         if let firstRunDefaults = UserDefaults(suiteName: firstRunSuiteName) {
             firstRunDefaults.register(defaults: AppFeature.availabilityDefaults)
             FeaturePreset.prepareFirstRunAvailability(in: firstRunDefaults)
@@ -16052,7 +16053,7 @@ struct MetricsTests {
         // AppKit reached from below the line would be a main thread violation
         // on every hotplug, wake and panel open.
         let brightnessSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Display/BrightnessService.swift",
+            contentsOfFile: "Sources/Sundry/Services/Display/BrightnessService.swift",
             encoding: .utf8)) ?? ""
         let brightnessWorkQueueHalf = brightnessSource
             .components(separatedBy: "// MARK: - Rebuild (work queue)").last ?? ""
@@ -17211,8 +17212,8 @@ struct MetricsTests {
         expect(RadialMenuSupport.needsAccessibility([shortcutProfile]),
                "profile with keyboard shortcut slice needs Accessibility")
 
-        let profileTestDefaults = UserDefaults(suiteName: "com.vorssaint.tests.radialProfiles")!
-        profileTestDefaults.removePersistentDomain(forName: "com.vorssaint.tests.radialProfiles")
+        let profileTestDefaults = UserDefaults(suiteName: "com.sundry.tests.radialProfiles")!
+        profileTestDefaults.removePersistentDomain(forName: "com.sundry.tests.radialProfiles")
         profileTestDefaults.set(true, forKey: AppFeature.radialMenu.availabilityKey)
         profileTestDefaults.set(true, forKey: DefaultsKey.radialMenuEnabled)
 
@@ -17236,7 +17237,7 @@ struct MetricsTests {
         profileTestDefaults.set(false, forKey: DefaultsKey.radialMenuEnabled)
         expect(!RadialMenuSupport.claimsMouseButton(MouseButtonShortcutSupport.backButtonNumber, defaults: profileTestDefaults),
                "disabled radial menu never claims mouse buttons")
-        profileTestDefaults.removePersistentDomain(forName: "com.vorssaint.tests.radialProfiles")
+        profileTestDefaults.removePersistentDomain(forName: "com.sundry.tests.radialProfiles")
 
         let testImage = NSImage(size: NSSize(width: 16, height: 16))
         testImage.lockFocus()
@@ -17265,8 +17266,8 @@ struct MetricsTests {
                 && RadialMenuSupport.claimedMouseButtons(iconProfilesData) == fullyDecodedButtons,
                "claimed mouse buttons read without the items match the full profile decode")
 
-        let legacyButtonDefaults = UserDefaults(suiteName: "com.vorssaint.tests.radialLegacyButton")!
-        legacyButtonDefaults.removePersistentDomain(forName: "com.vorssaint.tests.radialLegacyButton")
+        let legacyButtonDefaults = UserDefaults(suiteName: "com.sundry.tests.radialLegacyButton")!
+        legacyButtonDefaults.removePersistentDomain(forName: "com.sundry.tests.radialLegacyButton")
         legacyButtonDefaults.set(RadialMenuMouseTrigger.forward.rawValue,
                                  forKey: DefaultsKey.radialMenuMouseButton)
         expect(RadialMenuSupport.claimedMouseButtons(nil, defaults: legacyButtonDefaults)
@@ -17275,7 +17276,7 @@ struct MetricsTests {
                                                          defaults: legacyButtonDefaults)
                 == [MouseButtonShortcutSupport.forwardButtonNumber],
                "claimed mouse buttons fall back to the legacy button key like the full decode")
-        legacyButtonDefaults.removePersistentDomain(forName: "com.vorssaint.tests.radialLegacyButton")
+        legacyButtonDefaults.removePersistentDomain(forName: "com.sundry.tests.radialLegacyButton")
 
         var reorderItems = [
             RadialMenuItem(kind: .app, name: "A"),
@@ -17311,7 +17312,7 @@ struct MetricsTests {
         // the button is claimed, nothing past that point hands an event back,
         // or the down and the up split.
         let radialServiceCode = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/RadialMenu/RadialMenuService.swift",
+            contentsOfFile: "Sources/Sundry/Services/RadialMenu/RadialMenuService.swift",
             encoding: .utf8)) ?? "")
             .components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -17501,46 +17502,46 @@ struct MetricsTests {
 
         let ownScreenshotWindows: Set<CGWindowID> = [11, 12, 13]
         let protectedScreenshotWindows: Set<CGWindowID> = [12, 99]
-        expect(Defaults.registeredDefaults[DefaultsKey.screenshotHideVorssaintWindows]
+        expect(Defaults.registeredDefaults[DefaultsKey.screenshotHideSundryWindows]
                 as? Bool == true,
-               "screenshots hide Vorssaint windows by default")
+               "screenshots hide Sundry windows by default")
         expect(SettingsBackupSupport.exportKeys().contains(
-            DefaultsKey.screenshotHideVorssaintWindows),
+            DefaultsKey.screenshotHideSundryWindows),
                "the screenshot window visibility preference travels in backups")
         expect(ScreenshotCapturePolicy.excludedWindowIDs(
-            hideVorssaintWindows: true,
+            hideSundryWindows: true,
             ownWindowIDs: ownScreenshotWindows,
             protectedWindowIDs: protectedScreenshotWindows
         ) == ownScreenshotWindows,
-        "screenshot hiding Vorssaint excludes every own window")
+        "screenshot hiding Sundry excludes every own window")
         expect(ScreenshotCapturePolicy.excludedWindowIDs(
-            hideVorssaintWindows: false,
+            hideSundryWindows: false,
             ownWindowIDs: ownScreenshotWindows,
             protectedWindowIDs: protectedScreenshotWindows
         ) == [12],
-        "screenshot keeps protected windows excluded while Vorssaint is visible")
+        "screenshot keeps protected windows excluded while Sundry is visible")
         expect(ScreenshotCapturePolicy.canPickWindow(
             7,
             isOwnWindow: false,
-            hideVorssaintWindows: true,
+            hideSundryWindows: true,
             protectedWindowIDs: protectedScreenshotWindows
         ), "screenshot can always pick an ordinary external window")
         expect(!ScreenshotCapturePolicy.canPickWindow(
             11,
             isOwnWindow: true,
-            hideVorssaintWindows: true,
+            hideSundryWindows: true,
             protectedWindowIDs: protectedScreenshotWindows
-        ), "screenshot cannot pick a Vorssaint window while hiding them")
+        ), "screenshot cannot pick a Sundry window while hiding them")
         expect(ScreenshotCapturePolicy.canPickWindow(
             11,
             isOwnWindow: true,
-            hideVorssaintWindows: false,
+            hideSundryWindows: false,
             protectedWindowIDs: protectedScreenshotWindows
-        ), "screenshot can pick an ordinary Vorssaint window when visible")
+        ), "screenshot can pick an ordinary Sundry window when visible")
         expect(!ScreenshotCapturePolicy.canPickWindow(
             12,
             isOwnWindow: true,
-            hideVorssaintWindows: false,
+            hideSundryWindows: false,
             protectedWindowIDs: protectedScreenshotWindows
         ), "screenshot cannot pick its own protected capture UI")
 
@@ -17585,7 +17586,7 @@ struct MetricsTests {
             target: capturedWindow, frontToBack: [capturedWindow]) == nil,
                "a window with nothing stacked on it keeps the ordinary single-window capture")
         let captureEngineSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenshotCaptureEngine.swift",
+            contentsOfFile: "Sources/Sundry/Services/QuickTools/ScreenshotCaptureEngine.swift",
             encoding: .utf8)) ?? ""
         // A sheet is often exactly as wide as the window it drops out of, so
         // the rule has to take one that matches an edge rather than shrink from
@@ -17628,7 +17629,7 @@ struct MetricsTests {
         // gate before its AX call so window capture never starts an
         // Accessibility round trip merely because geometry found a candidate.
         let screenshotCaptureEngineSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenshotCaptureEngine.swift",
+            contentsOfFile: "Sources/Sundry/Services/QuickTools/ScreenshotCaptureEngine.swift",
             encoding: .utf8)) ?? ""
         let captureWindowBody = (screenshotCaptureEngineSource
             .components(separatedBy: "static func captureWindow(").last ?? "")
@@ -18054,7 +18055,7 @@ struct MetricsTests {
         expect(!ScreenshotSupport.selectionAcceptsPointerInput(sessionIsOver: true,
                                                                capturePending: true),
                "both at once still ignores the pointer")
-        let captureMenuSuite = "com.vorssaint.tests.capture-menu.\(UUID().uuidString)"
+        let captureMenuSuite = "com.sundry.tests.capture-menu.\(UUID().uuidString)"
         let captureMenuDefaults = UserDefaults(suiteName: captureMenuSuite)!
         defer { captureMenuDefaults.removePersistentDomain(forName: captureMenuSuite) }
         for tool in ScreenCaptureTool.allCases {
@@ -18088,7 +18089,7 @@ struct MetricsTests {
                 == [.screenshot, .recording, .text, .color],
                "the capture chooser keeps a stable order for every installed mode")
         let captureSettingsSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/ScreenCaptureSettings.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/ScreenCaptureSettings.swift",
             encoding: .utf8)) ?? ""
         expect(captureSettingsSource.contains("selectedTool")
                 && captureSettingsSource.contains(".pickerStyle(.segmented)")
@@ -18096,7 +18097,7 @@ struct MetricsTests {
                 && captureSettingsSource.contains("RecentCapturesShortcutRows()"),
                "the capture page keeps tool and shared-history shortcuts in the top section")
         let recentCaptureServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/QuickTools/RecentCaptureService.swift",
+            contentsOfFile: "Sources/Sundry/Services/QuickTools/RecentCaptureService.swift",
             encoding: .utf8)) ?? ""
         expect(recentCaptureServiceSource.contains("QuickToolHotkey(id: 21)")
                 && recentCaptureServiceSource.contains(
@@ -18132,32 +18133,32 @@ struct MetricsTests {
             for: .screenshot,
             screenshotFreeze: false,
             screenshotIncludePointer: true,
-            screenshotHideVorssaintWindows: true)
+            screenshotHideSundryWindows: true)
         let recorderPolicy = ScreenshotSupport.unifiedCapturePolicy(
             for: .recording,
             screenshotFreeze: false,
             screenshotIncludePointer: true,
-            screenshotHideVorssaintWindows: true)
+            screenshotHideSundryWindows: true)
         let textPolicy = ScreenshotSupport.unifiedCapturePolicy(
             for: .text,
             screenshotFreeze: false,
             screenshotIncludePointer: true,
-            screenshotHideVorssaintWindows: true)
+            screenshotHideSundryWindows: true)
         expect(liveScreenshotPolicy == .init(freeze: false, includePointer: true,
-                                             hideVorssaintWindows: true,
+                                             hideSundryWindows: true,
                                              usesGeometry: false)
                 && recorderPolicy == .init(freeze: true, includePointer: false,
-                                           hideVorssaintWindows: false,
+                                           hideSundryWindows: false,
                                            usesGeometry: true)
                 && textPolicy == .init(freeze: true, includePointer: false,
-                                       hideVorssaintWindows: true,
+                                       hideSundryWindows: true,
                                        usesGeometry: false),
                "switching capture mode rebuilds the frozen frame, pointer and window policy")
         let colorPolicy = ScreenshotSupport.unifiedCapturePolicy(
             for: .color,
             screenshotFreeze: false,
             screenshotIncludePointer: true,
-            screenshotHideVorssaintWindows: true)
+            screenshotHideSundryWindows: true)
         expect(textPolicy.sharesSource(with: colorPolicy)
                 && !textPolicy.sharesSource(with: recorderPolicy)
                 && !textPolicy.sharesSource(with: liveScreenshotPolicy),
@@ -18176,7 +18177,7 @@ struct MetricsTests {
                                                             capturePending: false),
                "the capture chooser disappears for the whole drag and while capture is pending")
         let captureSelectionSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenshotSelectionController.swift",
+            contentsOfFile: "Sources/Sundry/Services/QuickTools/ScreenshotSelectionController.swift",
             encoding: .utf8)) ?? ""
         expect(captureSelectionSource.contains(
             "override func mouseExited(with event: NSEvent) {\n        refreshPointerState()\n        refreshGuideVisibility()"),
@@ -18196,7 +18197,7 @@ struct MetricsTests {
                 && !captureSelectionSource.contains("|| bounds.contains(hoverPoint)"),
                "the capture loupe draws on only the display that owns the current pointer")
         let captureServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenCaptureService.swift",
+            contentsOfFile: "Sources/Sundry/Services/QuickTools/ScreenCaptureService.swift",
             encoding: .utf8)) ?? ""
         expect(!captureServiceSource.contains("replaceSelection"),
                "the capture service does not cancel and recreate selection controllers when changing modes")
@@ -18209,7 +18210,7 @@ struct MetricsTests {
         // reach mouseDown. Comments are stripped so prose naming the API
         // cannot answer for the code.
         let quickPreviewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/QuickTools/ScreenshotQuickPreviewController.swift",
+            contentsOfFile: "Sources/Sundry/Services/QuickTools/ScreenshotQuickPreviewController.swift",
             encoding: .utf8)) ?? ""
         expect(!quickPreviewSource.isEmpty, "the screenshot preview source reads back for its shape check")
         let quickPreviewCode = quickPreviewSource.components(separatedBy: "\n")
@@ -18246,7 +18247,7 @@ struct MetricsTests {
         // "1960x1274" beside a screenshot editor that already read
         // "2940 \u{00D7} 1912 px", and the letter x is the tell.
         let recorderEditorSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Recorder/RecorderEditorView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Recorder/RecorderEditorView.swift",
             encoding: .utf8)) ?? ""
         expect(!recorderEditorSource.isEmpty, "the recorder editor source reads back for its shape check")
         expect(recorderEditorSource.contains("\\(Int(size.width)) \u{00D7} \\(Int(size.height))"),
@@ -18255,7 +18256,7 @@ struct MetricsTests {
         // borrowed the shape, pointer and background labels as subtitles, so
         // two of the three said their own name back in English.
         let inspectorSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Recorder/RecorderInspector.swift",
+            contentsOfFile: "Sources/Sundry/UI/Recorder/RecorderInspector.swift",
             encoding: .utf8)) ?? ""
         expect(!inspectorSource.isEmpty, "the recorder inspector source reads back for its shape check")
         expect(!inspectorSource.contains("subtitle"),
@@ -18295,9 +18296,9 @@ struct MetricsTests {
         // drag re-read it from disk; it is loaded once per chosen file now,
         // which is what a task is for.
         var decodingInBody: [String] = []
-        for path in (try? FileManager.default.subpathsOfDirectory(atPath: "Sources/Vorssaint/UI")) ?? [] {
+        for path in (try? FileManager.default.subpathsOfDirectory(atPath: "Sources/Sundry/UI")) ?? [] {
             guard path.hasSuffix(".swift") else { continue }
-            let full = "Sources/Vorssaint/UI/" + path
+            let full = "Sources/Sundry/UI/" + path
             let lines = ((try? String(contentsOfFile: full, encoding: .utf8)) ?? "")
                 .components(separatedBy: "\n")
             for (index, line) in lines.enumerated() {
@@ -18326,8 +18327,8 @@ struct MetricsTests {
             .map(\.count).max() ?? 0
         expect(widestBackdropLabel >= 10,
                "the backdrop labels are long enough somewhere for the column to matter")
-        for path in ["Sources/Vorssaint/UI/Screenshot/ScreenshotBackdropPopover.swift",
-                     "Sources/Vorssaint/UI/Recorder/RecorderInspector.swift"] {
+        for path in ["Sources/Sundry/UI/Screenshot/ScreenshotBackdropPopover.swift",
+                     "Sources/Sundry/UI/Recorder/RecorderInspector.swift"] {
             let code = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
             expect(!code.isEmpty, "the slider source reads back for its shape check")
             let pinned = code.components(separatedBy: "\n")
@@ -19031,7 +19032,7 @@ struct MetricsTests {
             developerOverride: "https://test.example/")
         expect(testShareEndpoint.absoluteString == "https://test.example"
                 && ScreenshotSharingSupport.endpoint(
-                    bundleIdentifier: "com.vorssaint.utils",
+                    bundleIdentifier: "com.sundry.utils",
                     developerOverride: "https://test.example").absoluteString
                     == ScreenshotSharingSupport.productionEndpoint.absoluteString
                 && ScreenshotSharingSupport.endpoint(
@@ -19147,7 +19148,7 @@ struct MetricsTests {
                 && GlobalShortcutRole.scratchpad.feature == .scratchpad,
                "the scratchpad shortcut role gates on its toggle and feature")
         let scratchpadViewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Scratchpad/ScratchpadView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Scratchpad/ScratchpadView.swift",
             encoding: .utf8)) ?? ""
         let scratchpadHitTargetContracts = [
             "Image(systemName: \"plus\")\n                    .font(.system(size: 12, weight: .semibold))\n                    .frame(width: 22, height: 22)\n                    .contentShape(Rectangle())",
@@ -19167,11 +19168,11 @@ struct MetricsTests {
         let borderlessMenuException = "KillProcess/KillProcessView"
         var unpinnedBorderlessMenus: [String] = []
         let uiFiles = FileManager.default
-            .enumerator(atPath: "Sources/Vorssaint/UI")?
+            .enumerator(atPath: "Sources/Sundry/UI")?
             .compactMap { $0 as? String }
             .filter { $0.hasSuffix(".swift") && !$0.contains(" 2") } ?? []
         for file in uiFiles.sorted() {
-            let path = "Sources/Vorssaint/UI/\(file)"
+            let path = "Sources/Sundry/UI/\(file)"
             guard !file.contains(borderlessMenuException),
                   let source = try? String(contentsOfFile: path, encoding: .utf8) else { continue }
             let lines = source.components(separatedBy: "\n")
@@ -19206,11 +19207,11 @@ struct MetricsTests {
         // caller that was found holding it.
         var unboundedOperationWaits: [String] = []
         let appSources = FileManager.default
-            .enumerator(atPath: "Sources/Vorssaint")?
+            .enumerator(atPath: "Sources/Sundry")?
             .compactMap { $0 as? String }
             .filter { $0.hasSuffix(".swift") && !$0.contains(" 2") } ?? []
         for file in appSources.sorted() {
-            guard let source = try? String(contentsOfFile: "Sources/Vorssaint/\(file)",
+            guard let source = try? String(contentsOfFile: "Sources/Sundry/\(file)",
                                            encoding: .utf8) else { continue }
             for (index, line) in source.components(separatedBy: "\n").enumerated()
             where line.contains("waitUntilAllOperationsAreFinished") {
@@ -19239,7 +19240,7 @@ struct MetricsTests {
         }
         var applicationRoleReads: [String] = []
         for file in appSources.sorted() {
-            guard let source = try? String(contentsOfFile: "Sources/Vorssaint/\(file)",
+            guard let source = try? String(contentsOfFile: "Sources/Sundry/\(file)",
                                            encoding: .utf8) else { continue }
             let lines = source.components(separatedBy: "\n")
             var applicationElements: Set<String> = []
@@ -19266,7 +19267,7 @@ struct MetricsTests {
         // it stops at the application element first, rather than a pin per copy.
         var unguardedParentWalks: [String] = []
         for file in appSources.sorted() {
-            guard let source = try? String(contentsOfFile: "Sources/Vorssaint/\(file)",
+            guard let source = try? String(contentsOfFile: "Sources/Sundry/\(file)",
                                            encoding: .utf8) else { continue }
             let lines = source.components(separatedBy: "\n")
             // Per occurrence and in order: a guard sitting anywhere in the file
@@ -19477,7 +19478,7 @@ struct MetricsTests {
 
         // Muting every microphone, not just the one the Mac is set to: an app
         // pointed at a device of its own has to go silent too.
-        expect(MicMuteSupport.isOwnDevice(name: "Vorssaint Mixer")
+        expect(MicMuteSupport.isOwnDevice(name: "Sundry Mixer")
                 && !MicMuteSupport.isOwnDevice(name: "MacBook Air Microphone"),
                "the mute skips the app's own mixing device and no other")
         expect(!MicMuteSupport.shouldSaveVolume(nil)
@@ -19803,7 +19804,7 @@ struct MetricsTests {
                "with nothing configured the drag claims no button away from navigation")
 
         let spacesServiceCode = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/MouseButtons/MouseButtonShortcutService.swift",
+            contentsOfFile: "Sources/Sundry/Services/MouseButtons/MouseButtonShortcutService.swift",
             encoding: .utf8)) ?? "")
             .components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -19821,7 +19822,7 @@ struct MetricsTests {
                "the drag asks with the system's own registered combinations, never a simulated gesture")
 
         let spaceBridgeCode = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Switcher/SpaceWindowBridge.swift",
+            contentsOfFile: "Sources/Sundry/Services/Switcher/SpaceWindowBridge.swift",
             encoding: .utf8)) ?? "")
             .components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -19835,14 +19836,14 @@ struct MetricsTests {
         // the down path must read that switch itself and hand the click back
         // whole: a mapping left behind is inert and its button is the app's.
         let spacesServiceLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/MouseButtons/MouseButtonShortcutService.swift",
+            contentsOfFile: "Sources/Sundry/Services/MouseButtons/MouseButtonShortcutService.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         let isCodeLine: (String) -> Bool = {
             !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//")
         }
 
         let commandBarCatalogLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/CommandBar/CommandBarCatalog.swift",
+            contentsOfFile: "Sources/Sundry/Services/CommandBar/CommandBarCatalog.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         for (constructor, eligibility) in [
             ("killProcessEntries", "false"),
@@ -19894,10 +19895,10 @@ struct MetricsTests {
         }
 
         let mouseSettingsViewLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/SettingsView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/SettingsView.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         let menuPanelLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/MenuPanel/MenuPanelView.swift",
+            contentsOfFile: "Sources/Sundry/UI/MenuPanel/MenuPanelView.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         let shortcutKey = "DefaultsKey.mouseButtonShortcutsEnabled"
         let spacesKey = "DefaultsKey.mouseSpacesGestureEnabled"
@@ -19977,7 +19978,7 @@ struct MetricsTests {
             + "whose switch is not the shortcut switch")
 
         let mouseSettingsLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/MouseButtonSettings.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/MouseButtonSettings.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         // Matched as the whole line, indentation included: at Section-child
         // depth no outer `if enabled` can quietly re-gate the list behind the
@@ -20266,13 +20267,13 @@ struct MetricsTests {
                 ),
                "a stop or replaced event tap invalidates a queued Super key mapping")
         expect(SuperKeyMappingGuard.cleanupSource(in: [
-            "Vorssaint", SuperKeyMappingGuard.cleanupArgument, "capsLock",
+            "Sundry", SuperKeyMappingGuard.cleanupArgument, "capsLock",
         ]) == .capsLock
                 && SuperKeyMappingGuard.cleanupSource(in: [
-                    "Vorssaint", SuperKeyMappingGuard.cleanupArgument, "rightCommand",
+                    "Sundry", SuperKeyMappingGuard.cleanupArgument, "rightCommand",
                 ]) == .rightCommand
                 && SuperKeyMappingGuard.cleanupSource(in: [
-                    "Vorssaint", SuperKeyMappingGuard.cleanupArgument, "invalid",
+                    "Sundry", SuperKeyMappingGuard.cleanupArgument, "invalid",
                 ]) == nil,
                "the crash guard accepts only a real Super key source")
 
@@ -20365,7 +20366,7 @@ struct MetricsTests {
         // The page is the only place a refused mapping is visible, so the
         // reason has to reach it and be spelled out there.
         let superKeySettingsSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/SuperKeySettings.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/SuperKeySettings.swift",
             encoding: .utf8)) ?? ""
         let failureMark = superKeySettingsSource.range(of: "superKey.mappingFailure")
         let runningMark = superKeySettingsSource.range(of: "superKey.isRunning")
@@ -20430,7 +20431,7 @@ struct MetricsTests {
         // one place guaranteed to run before every session tap that reads
         // the flags. The service file is not in this binary; pin the shape.
         let superKeyServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/SuperKey/SuperKeyService.swift",
+            contentsOfFile: "Sources/Sundry/Services/SuperKey/SuperKeyService.swift",
             encoding: .utf8)) ?? ""
         let superKeyServiceCode = superKeyServiceSource
             .split(separator: "\n", omittingEmptySubsequences: false)
@@ -20605,7 +20606,7 @@ struct MetricsTests {
         // answers /private/tmp/… for a file the running program answers
         // /tmp/… for. Both ends resolve, so they meet.
         let identityRoot = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorssaint-identity-\(getpid())", isDirectory: true)
+            .appendingPathComponent("sundry-identity-\(getpid())", isDirectory: true)
         let runtimeBinary = identityRoot.appendingPathComponent("runtime/bin/launcher")
         try? FileManager.default.createDirectory(at: runtimeBinary.deletingLastPathComponent(),
                                                  withIntermediateDirectories: true)
@@ -20688,7 +20689,7 @@ struct MetricsTests {
         // has no bundle identifier, while an ordinary .app bundle keeps its
         // bundle row and background/accessory processes stay excluded.
         let runningTestRoot = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorssaint-running-\(getpid())", isDirectory: true)
+            .appendingPathComponent("sundry-running-\(getpid())", isDirectory: true)
         let runningTargetBinary = runningTestRoot.appendingPathComponent("bin/java")
         let runningSymlinkBinary = runningTestRoot.appendingPathComponent("bin/java_link")
         try? FileManager.default.createDirectory(at: runningTargetBinary.deletingLastPathComponent(),
@@ -20867,7 +20868,7 @@ struct MetricsTests {
         // way into the list, dropping a file onto it among them, has to go
         // through the same resolver as the sheet does.
         let pickerLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/AppBundleList.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/AppBundleList.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         var resolvedAddSites: [String] = []
         var rawAddSites: [String] = []
@@ -20894,7 +20895,7 @@ struct MetricsTests {
         // would hide the one component that differs. Neither picker is
         // compiled into this binary, so their shapes are pinned here.
         let appPickerLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Uninstall/AppPickerView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Uninstall/AppPickerView.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         let captionPickerLines = ["AppBundleList.swift": pickerLines,
                                   "AppPickerView.swift": appPickerLines]
@@ -20913,7 +20914,7 @@ struct MetricsTests {
         var resolvedMatchSites: [String] = []
         var rawMatchSites: [String] = []
         let matcherLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/MouseExceptions/MouseAppExceptions.swift",
+            contentsOfFile: "Sources/Sundry/Services/MouseExceptions/MouseAppExceptions.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         for (index, line) in matcherLines.enumerated()
         where !line.trimmingCharacters(in: .whitespaces).hasPrefix("//")
@@ -20943,7 +20944,7 @@ struct MetricsTests {
         for file in ["Services/MouseExceptions/MouseAppExceptionSupport.swift",
                      "Services/InstalledApps.swift",
                      "Core/Defaults.swift"] {
-            let ruleLines = ((try? String(contentsOfFile: "Sources/Vorssaint/\(file)",
+            let ruleLines = ((try? String(contentsOfFile: "Sources/Sundry/\(file)",
                                           encoding: .utf8)) ?? "").components(separatedBy: "\n")
             if ruleLines.count <= 1 { slashRuleSites.append("\(file) unreadable") }
             for (index, line) in ruleLines.enumerated()
@@ -21450,7 +21451,7 @@ struct MetricsTests {
         // Strip comments before asserting: "X appears before Y" would otherwise
         // be satisfied by a doc comment mentioning either.
         let backupServiceLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/SettingsBackup.swift",
+            contentsOfFile: "Sources/Sundry/Services/SettingsBackup.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         let captureAt = backupServiceLines.firstIndex {
             isCodeLine($0) && $0.contains("SettingsBackupSupport.pathIdentities(")
@@ -21724,12 +21725,12 @@ struct MetricsTests {
         expect(packageRows.allSatisfy { $0.canInstallInPlace },
                "package rows can be installed on the spot")
         let ownPackageRows = AppUpdatesSupport.packageUpdates(
-            outdated: [caskUpdate("vorssaint", installed: "3.1.12", current: "3.2.0")],
+            outdated: [caskUpdate("sundry", installed: "3.1.12", current: "3.2.0")],
             installed: [],
-            ignoredTokens: ["vorssaint"],
+            ignoredTokens: ["sundry"],
             apps: [])
         expect(ownPackageRows.isEmpty,
-               "the app update list never offers to replace Vorssaint through its own package")
+               "the app update list never offers to replace Sundry through its own package")
 
         let storeApps = [
             AppUpdatesSupport.InstalledApp(name: "Blocker", bundleID: "net.example.blocker",
@@ -22930,10 +22931,10 @@ struct MetricsTests {
         expect(Defaults.registeredDefaults[DefaultsKey.panelUtilityScreenRecorder] as? Bool == true,
                "the screen recorder panel tile ships visible like its siblings")
         let quickLauncherServiceSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/QuickTools/QuickLauncherService.swift",
+            contentsOfFile: "Sources/Sundry/Services/QuickTools/QuickLauncherService.swift",
             encoding: .utf8)) ?? ""
         let quickLauncherViewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/QuickLauncher/QuickLauncherView.swift",
+            contentsOfFile: "Sources/Sundry/UI/QuickLauncher/QuickLauncherView.swift",
             encoding: .utf8)) ?? ""
         expect(quickLauncherServiceSource.contains("case .screenRecorder: return .screenRecorder")
                 && quickLauncherServiceSource.contains("ScreenRecorderService.shared.toggle()")
@@ -22951,7 +22952,7 @@ struct MetricsTests {
                 && !extraCloseNeedsDemotion && windowRetention.count == 0,
                "user-facing windows share one balanced app activation lifetime")
         let appDelegateSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift",
+            contentsOfFile: "Sources/Sundry/App/AppDelegate.swift",
             encoding: .utf8)) ?? ""
         expect(appDelegateSource.contains("if !settingsKeepsAppRegular {")
                 && appDelegateSource.contains("WindowActivationPolicy.retain()")
@@ -23178,7 +23179,7 @@ struct MetricsTests {
                "a recording being written right now has no file yet and is left alone")
 
         let directSaveRoot = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorssaint-recorder-save-\(UUID().uuidString)",
+            .appendingPathComponent("sundry-recorder-save-\(UUID().uuidString)",
                                     isDirectory: true)
         try? FileManager.default.createDirectory(at: directSaveRoot,
                                                  withIntermediateDirectories: true)
@@ -23285,7 +23286,7 @@ struct MetricsTests {
         // a file with the areas kept unreadable, and everything else drawn on
         // the picture, missing.
         let recorderComposerSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Recorder/RecorderComposer.swift",
+            contentsOfFile: "Sources/Sundry/Services/Recorder/RecorderComposer.swift",
             encoding: .utf8)) ?? ""
         expect(!recorderComposerSource.isEmpty,
                "the recorder composer source reads back for its shape check")
@@ -23293,7 +23294,7 @@ struct MetricsTests {
                     "outputSize: CGSize) async -> AVMutableVideoComposition?"),
                "a composition that cannot be built answers with nothing, never with the plain one")
         let recorderExporterSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Recorder/RecorderExporter.swift",
+            contentsOfFile: "Sources/Sundry/Services/Recorder/RecorderExporter.swift",
             encoding: .utf8)) ?? ""
         expect(!recorderExporterSource.isEmpty,
                "the recorder exporter source reads back for its shape check")
@@ -23721,7 +23722,7 @@ struct MetricsTests {
         // recording's start time is written by `start()` and read from that
         // same callback, so it belongs under the lock too.
         let typingSampler = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Recorder/RecorderTypingTrack.swift",
+            contentsOfFile: "Sources/Sundry/Services/Recorder/RecorderTypingTrack.swift",
             encoding: .utf8)) ?? "")
             .components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }.joined(separator: " ")
@@ -23738,7 +23739,7 @@ struct MetricsTests {
         // Both samplers install and remove AppKit event monitors, so they are
         // started and stopped back on the main thread.
         let recorderSessionShape = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Recorder/ScreenRecorderService.swift",
+            contentsOfFile: "Sources/Sundry/Services/Recorder/ScreenRecorderService.swift",
             encoding: .utf8)) ?? "")
             .components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }.joined(separator: " ")
@@ -24294,7 +24295,7 @@ struct MetricsTests {
                 == ["Área", "Ímã", "Zebra"],
                "the localized compare is what puts them where a reader expects")
         let onboardingSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Onboarding/OnboardingView.swift",
+            contentsOfFile: "Sources/Sundry/UI/Onboarding/OnboardingView.swift",
             encoding: .utf8)) ?? ""
         expect(!onboardingSource.isEmpty, "the onboarding source reads back for its sorting check")
         let onboardingCode = onboardingSource.components(separatedBy: "\n")
@@ -24312,10 +24313,10 @@ struct MetricsTests {
         expect(dottedI.folding(options: foldOptions, locale: Locale(identifier: "tr_TR"))
                 != dottedI.folding(options: foldOptions, locale: nil),
                "the dotted I is exactly where locale-aware folding diverges")
-        for path in ["Sources/Vorssaint/Services/Clipboard/ClipboardHistorySupport.swift",
-                     "Sources/Vorssaint/UI/Settings/SettingsSearchSupport.swift",
-                     "Sources/Vorssaint/Services/Switcher/SwitcherSupport.swift",
-                     "Sources/Vorssaint/Services/CommandBar/CommandBarSupport.swift"] {
+        for path in ["Sources/Sundry/Services/Clipboard/ClipboardHistorySupport.swift",
+                     "Sources/Sundry/UI/Settings/SettingsSearchSupport.swift",
+                     "Sources/Sundry/Services/Switcher/SwitcherSupport.swift",
+                     "Sources/Sundry/Services/CommandBar/CommandBarSupport.swift"] {
             let source = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
             expect(!source.isEmpty, "\(path) reads back for its folding check")
             let code = source.components(separatedBy: "\n")
@@ -24334,7 +24335,7 @@ struct MetricsTests {
         // "battery" matched nothing outside English and the chip led to an
         // empty list, which teaches the opposite of what an example is for.
         let commandBarViewSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/CommandBar/CommandBarView.swift",
+            contentsOfFile: "Sources/Sundry/UI/CommandBar/CommandBarView.swift",
             encoding: .utf8)) ?? ""
         expect(!commandBarViewSource.isEmpty, "the command bar view source reads back for its shape check")
         // Comments are stripped so prose naming the old literal cannot fail
@@ -24348,7 +24349,7 @@ struct MetricsTests {
         // A key glyph in front of a button label reads as that button's
         // shortcut, so neither command bar action button carries one.
         let commandBarSettingsSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/CommandBarSettings.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/CommandBarSettings.swift",
             encoding: .utf8)) ?? ""
         expect(!commandBarSettingsSource.contains("Label(text.openButton, systemImage:")
                 && !commandBarSettingsSource.contains("Label(text.resetPositionButton, systemImage:"),
@@ -24680,7 +24681,7 @@ struct MetricsTests {
                     GlobalShortcut(keyCode: Int64(kVK_ANSI_Q), modifiers: [.command])),
                "Command Q is a real combination; the card has to be able to store it")
         let commandBarSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/CommandBar/CommandBarService.swift",
+            contentsOfFile: "Sources/Sundry/Services/CommandBar/CommandBarService.swift",
             encoding: .utf8)) ?? ""
         let commandBarCode = commandBarSource
             .split(separator: "\n", omittingEmptySubsequences: false)
@@ -24778,10 +24779,10 @@ struct MetricsTests {
         expect(CommandBarLinks.expand("https://x.com/{clipboard}", kind: .link,
                                       clipboard: "a+b") == "https://x.com/a%2Bb",
                "a plus sign inside a search is escaped, not read as a space")
-        expect(CommandBarLinks.trailingArgument(query: "gh vorssaint utils", name: "gh")
-                == "vorssaint utils",
+        expect(CommandBarLinks.trailingArgument(query: "gh sundry utils", name: "gh")
+                == "sundry utils",
                "what comes after the name is what the saved search opens with")
-        expect(CommandBarLinks.trailingArgument(query: "GH Vorssaint", name: "gh") == "Vorssaint",
+        expect(CommandBarLinks.trailingArgument(query: "GH Sundry", name: "gh") == "Sundry",
                "the name is matched without case; the argument keeps its own")
         expect(CommandBarLinks.trailingArgument(query: "ghost writer", name: "gh") == nil
                 && CommandBarLinks.trailingArgument(query: "gh", name: "gh") == nil,
@@ -24830,8 +24831,8 @@ struct MetricsTests {
         expect(CommandBarLinks.revealPath(for: CommandBarLink(name: "day", kind: .place,
                                                               destination: "~/Notes/{date}.md")) == nil,
                "a place still holding a placeholder is a different file every time it runs")
-        expect(CommandBarLinks.rankingTitle(name: "gh", query: "gh vorssaint utils")
-                == "gh vorssaint utils",
+        expect(CommandBarLinks.rankingTitle(name: "gh", query: "gh sundry utils")
+                == "gh sundry utils",
                "once an argument follows the name, the row is scored against the whole query")
         expect(CommandBarLinks.rankingTitle(name: "gh", query: "gh") == "gh",
                "the name alone still scores against its own name")
@@ -24841,10 +24842,10 @@ struct MetricsTests {
         // the list on the first word of the argument, which is the moment it
         // was about to run.
         expect(CommandBarSearch.score(title: "gh", keywords: "Link",
-                                      query: "gh vorssaint utils") == nil
+                                      query: "gh sundry utils") == nil
                 && CommandBarSearch.score(
-                    title: CommandBarLinks.rankingTitle(name: "gh", query: "gh vorssaint utils"),
-                    keywords: "Link", query: "gh vorssaint utils") != nil,
+                    title: CommandBarLinks.rankingTitle(name: "gh", query: "gh sundry utils"),
+                    keywords: "Link", query: "gh sundry utils") != nil,
                "a saved search stays in the list while what to look for is typed")
 
         expect(CommandBarLink.Kind.script.symbolName == "terminal",
@@ -25029,10 +25030,10 @@ struct MetricsTests {
                "an unlearned category preserves its useful catalog order")
 
         let officialHabitService = CommandBarQueryHabits.installationKeyService(
-            bundleID: "com.vorssaint.utils")
+            bundleID: "com.sundry.utils")
         let developerHabitService = CommandBarQueryHabits.installationKeyService(
-            bundleID: "com.vorssaint.utils.dev")
-        expect(officialHabitService == "com.vorssaint.utils.command-bar-query-habits"
+            bundleID: "com.sundry.utils.dev")
+        expect(officialHabitService == "com.sundry.utils.command-bar-query-habits"
                 && officialHabitService != developerHabitService,
                "uninstalling one app variant cannot target the other variant's query key")
 
@@ -25232,7 +25233,7 @@ struct MetricsTests {
         let loadStarted = DispatchSemaphore(value: 0)
         let letLoadFinish = DispatchSemaphore(value: 0)
         let cache = CommandBarQueryHabitKeyCache(
-            queue: DispatchQueue(label: "org.vorssaint.tests.command-bar-query-key")) {
+            queue: DispatchQueue(label: "org.sundry.tests.command-bar-query-key")) {
                 loadStarted.signal()
                 letLoadFinish.wait()
                 return persistedHabitKey
@@ -25246,7 +25247,7 @@ struct MetricsTests {
                 && cache.cachedKey == persistedHabitKey,
                "a background query-key load publishes a validated key and announces readiness")
 
-        let removalQueue = DispatchQueue(label: "org.vorssaint.tests.query-key-removal")
+        let removalQueue = DispatchQueue(label: "org.sundry.tests.query-key-removal")
         let removalLoadStarted = DispatchSemaphore(value: 0)
         let finishRemovalLoad = DispatchSemaphore(value: 0)
         let removedKeyReady = DispatchSemaphore(value: 0)
@@ -25275,7 +25276,7 @@ struct MetricsTests {
 
         var retryCount = 0
         let retryCache = CommandBarQueryHabitKeyCache(
-            queue: DispatchQueue(label: "org.vorssaint.tests.command-bar-query-key-retry")) {
+            queue: DispatchQueue(label: "org.sundry.tests.command-bar-query-key-retry")) {
                 retryCount += 1
                 return retryCount == 1 ? nil : persistedHabitKey
             }
@@ -25315,7 +25316,7 @@ struct MetricsTests {
                 && editedCompletion == nil,
                "Tab remembers the fuzzy search unless the completed field is edited")
 
-        let learningDefaultsName = "com.vorssaint.tests.command-bar-learning"
+        let learningDefaultsName = "com.sundry.tests.command-bar-learning"
         let learningDefaults = UserDefaults(suiteName: learningDefaultsName)!
         learningDefaults.set("usage", forKey: DefaultsKey.commandBarUsage)
         learningDefaults.set("habits", forKey: DefaultsKey.commandBarQueryHabits)
@@ -25396,15 +25397,15 @@ struct MetricsTests {
                "no failure, no permission note")
         // Both done states have to route through that decision and name what
         // survived; neither may spell a tick of its own.
-        for path in ["Sources/Vorssaint/UI/Uninstall/UninstallerView.swift",
-                     "Sources/Vorssaint/UI/MenuPanel/PanelUninstallerView.swift"] {
+        for path in ["Sources/Sundry/UI/Uninstall/UninstallerView.swift",
+                     "Sources/Sundry/UI/MenuPanel/PanelUninstallerView.swift"] {
             let source = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
             expect(source.contains("UninstallFailureNote(items:"),
                    "\(path) names what the removal left behind")
             expect(!source.contains("\"checkmark.circle.fill\""),
                    "\(path) takes its done symbol from UninstallerSupport")
         }
-        let sharedUISource = (try? String(contentsOfFile: "Sources/Vorssaint/UI/SharedUI.swift",
+        let sharedUISource = (try? String(contentsOfFile: "Sources/Sundry/UI/SharedUI.swift",
                                           encoding: .utf8)) ?? ""
         expect(sharedUISource.contains("uninstallerFailedNeedsFDA"),
                "the failure note explains the permission the removal needed")
@@ -25589,35 +25590,35 @@ struct MetricsTests {
         // session and asks before re-arming a tap the window server disabled.
         // Comments are stripped so prose naming the API cannot answer for it.
         let sessionActivitySource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/SessionActivity.swift",
+            contentsOfFile: "Sources/Sundry/Services/SessionActivity.swift",
             encoding: .utf8)) ?? ""
         expect(sessionActivitySource.contains("sessionDidResignActiveNotification")
                 && sessionActivitySource.contains("sessionDidBecomeActiveNotification"),
                "the session watcher follows both halves of a fast user switch")
         let mouseAccelerationSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/MouseAcceleration/MouseAccelerationService.swift",
+            contentsOfFile: "Sources/Sundry/Services/MouseAcceleration/MouseAccelerationService.swift",
             encoding: .utf8)) ?? ""
         expect(mouseAccelerationSource.contains("SessionActivitySupport.isOnConsole("),
                "mouse acceleration shares the safe initial session-state fallback")
-        for tapOwner in ["Sources/Vorssaint/Services/ScrollInverter.swift",
-                         "Sources/Vorssaint/Services/SmoothScrollService.swift",
-                         "Sources/Vorssaint/Services/MouseNavigation/MouseNavigationService.swift",
-                         "Sources/Vorssaint/Services/MouseButtons/MouseButtonShortcutService.swift",
-                         "Sources/Vorssaint/Services/MiddleClick/MiddleClickService.swift",
-                         "Sources/Vorssaint/Services/QuitProtection/QuitProtectionService.swift",
-                         "Sources/Vorssaint/Services/RadialMenu/RadialMenuService.swift",
-                         "Sources/Vorssaint/Services/WindowLayout/WindowLayoutService.swift",
-                         "Sources/Vorssaint/Services/WindowMaximizer.swift",
-                         "Sources/Vorssaint/Services/Finder/FinderCutPaste.swift",
-                         "Sources/Vorssaint/Services/Finder/FinderRenameService.swift",
-                         "Sources/Vorssaint/Services/KeyboardDebounce/KeyboardDebounceService.swift",
-                         "Sources/Vorssaint/Services/SuperKey/SuperKeyService.swift",
-                         "Sources/Vorssaint/Services/ShortcutRecordingTap.swift",
-                         "Sources/Vorssaint/Services/Switcher/AppSwitcher.swift",
-                         "Sources/Vorssaint/Services/Snippets/TextSnippetService.swift",
-                         "Sources/Vorssaint/Services/Audio/PreciseVolumeRollerService.swift",
-                         "Sources/Vorssaint/Services/DockClick/DockClickService.swift",
-                         "Sources/Vorssaint/Services/Display/BrightnessService.swift"] {
+        for tapOwner in ["Sources/Sundry/Services/ScrollInverter.swift",
+                         "Sources/Sundry/Services/SmoothScrollService.swift",
+                         "Sources/Sundry/Services/MouseNavigation/MouseNavigationService.swift",
+                         "Sources/Sundry/Services/MouseButtons/MouseButtonShortcutService.swift",
+                         "Sources/Sundry/Services/MiddleClick/MiddleClickService.swift",
+                         "Sources/Sundry/Services/QuitProtection/QuitProtectionService.swift",
+                         "Sources/Sundry/Services/RadialMenu/RadialMenuService.swift",
+                         "Sources/Sundry/Services/WindowLayout/WindowLayoutService.swift",
+                         "Sources/Sundry/Services/WindowMaximizer.swift",
+                         "Sources/Sundry/Services/Finder/FinderCutPaste.swift",
+                         "Sources/Sundry/Services/Finder/FinderRenameService.swift",
+                         "Sources/Sundry/Services/KeyboardDebounce/KeyboardDebounceService.swift",
+                         "Sources/Sundry/Services/SuperKey/SuperKeyService.swift",
+                         "Sources/Sundry/Services/ShortcutRecordingTap.swift",
+                         "Sources/Sundry/Services/Switcher/AppSwitcher.swift",
+                         "Sources/Sundry/Services/Snippets/TextSnippetService.swift",
+                         "Sources/Sundry/Services/Audio/PreciseVolumeRollerService.swift",
+                         "Sources/Sundry/Services/DockClick/DockClickService.swift",
+                         "Sources/Sundry/Services/Display/BrightnessService.swift"] {
             let source = (try? String(contentsOfFile: tapOwner, encoding: .utf8)) ?? ""
             expect(!source.isEmpty, "\(tapOwner) reads back for its session-switch check")
             let code = source.components(separatedBy: "\n")
@@ -25651,14 +25652,14 @@ struct MetricsTests {
         // waits for whatever this app is drawing or asking Accessibility,
         // which is felt as click lag in whatever app is in front.
         let pointerTapSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/PointerTapRunLoop.swift",
+            contentsOfFile: "Sources/Sundry/Services/PointerTapRunLoop.swift",
             encoding: .utf8)) ?? ""
         expect(pointerTapSource.contains("CFMachPortInvalidate"),
                "the pointer thread hands back the port of every tap it gives up")
         expect(pointerTapSource.contains("qualityOfService = .userInteractive"),
                "the pointer thread is scheduled as input work")
-        for pointerTapOwner in ["Sources/Vorssaint/Services/ScrollInverter.swift",
-                                "Sources/Vorssaint/Services/MiddleClick/MiddleClickService.swift"] {
+        for pointerTapOwner in ["Sources/Sundry/Services/ScrollInverter.swift",
+                                "Sources/Sundry/Services/MiddleClick/MiddleClickService.swift"] {
             let source = (try? String(contentsOfFile: pointerTapOwner, encoding: .utf8)) ?? ""
             let code = source.components(separatedBy: "\n")
                 .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -25684,11 +25685,11 @@ struct MetricsTests {
         var tapOwnersWithoutInvalidate: [String] = []
         var tapOwners = 0
         let tapOwnerSources = FileManager.default
-            .enumerator(atPath: "Sources/Vorssaint")?
+            .enumerator(atPath: "Sources/Sundry")?
             .compactMap { $0 as? String }
             .filter { $0.hasSuffix(".swift") && !$0.contains(" 2") } ?? []
         for file in tapOwnerSources.sorted() {
-            guard let source = try? String(contentsOfFile: "Sources/Vorssaint/\(file)",
+            guard let source = try? String(contentsOfFile: "Sources/Sundry/\(file)",
                                            encoding: .utf8) else { continue }
             let code = source.components(separatedBy: "\n")
                 .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -25710,7 +25711,7 @@ struct MetricsTests {
                + "\(tapOwners) scanned owners: \(tapOwnersWithoutInvalidate)")
 
         let mouseTapAppDelegateSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/App/AppDelegate.swift",
+            contentsOfFile: "Sources/Sundry/App/AppDelegate.swift",
             encoding: .utf8)) ?? ""
         expect(mouseTapAppDelegateSource.contains("MouseButtonShortcutService.shared.suspend()"),
                "normal termination releases mouse-button tap state instead of waiting for a future Up")
@@ -25720,7 +25721,7 @@ struct MetricsTests {
         expect(accessibilitySink.contains(".quitWindowProtection"),
                "granting Accessibility starts quit protection without a relaunch")
         let smoothSchedulerSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/SmoothScrollService.swift",
+            contentsOfFile: "Sources/Sundry/Services/SmoothScrollService.swift",
             encoding: .utf8)) ?? ""
         let smoothSchedulerCode = smoothSchedulerSource.components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -25731,7 +25732,7 @@ struct MetricsTests {
         expect(steppedLoupeBypass.contains("stopGlide()"),
                "entering stepped magnifier zoom cancels the fast glide before passing the raw notch")
         let scrollInverterSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/ScrollInverter.swift",
+            contentsOfFile: "Sources/Sundry/Services/ScrollInverter.swift",
             encoding: .utf8)) ?? ""
         for (name, source) in [("scroll inverter", scrollInverterSource),
                                ("smooth scroll", smoothSchedulerCode)] {
@@ -25767,7 +25768,7 @@ struct MetricsTests {
         expect(smoothSleep.contains("stopGlide()"),
                "smooth scrolling cannot carry a pre-sleep glide into the next wake")
         let cleaningModeSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/CleaningMode/CleaningModeManager.swift",
+            contentsOfFile: "Sources/Sundry/Services/CleaningMode/CleaningModeManager.swift",
             encoding: .utf8)) ?? ""
         expect(cleaningModeSource.contains("SessionActivity.shared.onChange")
                 && cleaningModeSource.contains("deactivate(restoreSuspendedFeatures: false)")
@@ -25777,14 +25778,14 @@ struct MetricsTests {
                "Cleaning Mode ends and releases its filter tap when the login session leaves the screen")
 
         // MARK: Uninstallation paths stay aligned across SelfUninstall and Tools/uninstall.sh
-        let selfUninstallSource = (try? String(contentsOfFile: "Sources/Vorssaint/Services/SelfUninstall.swift",
+        let selfUninstallSource = (try? String(contentsOfFile: "Sources/Sundry/Services/SelfUninstall.swift",
                                               encoding: .utf8)) ?? ""
         let uninstallScriptSource = (try? String(contentsOfFile: "Tools/uninstall.sh",
                                                 encoding: .utf8)) ?? ""
         expect(!selfUninstallSource.isEmpty && !uninstallScriptSource.isEmpty,
                "uninstall sources read back for uninstallation alignment check")
         let queryHabitSupportSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/CommandBar/CommandBarSupport.swift",
+            contentsOfFile: "Sources/Sundry/Services/CommandBar/CommandBarSupport.swift",
             encoding: .utf8)) ?? ""
         expect(selfUninstallSource.contains("CommandBarQueryHabits.removeInstallationKey()")
                 && queryHabitSupportSource.contains("installationKeyCache.stopAndRemove {")
@@ -25809,7 +25810,7 @@ struct MetricsTests {
         // removal deletes the flag that launch-time recovery reads before it
         // reads the setting, so nothing repairs it afterwards — a reinstall
         // included.
-        let uninstallerSource = (try? String(contentsOfFile: "Sources/Vorssaint/Support/Uninstaller.swift",
+        let uninstallerSource = (try? String(contentsOfFile: "Sources/Sundry/Support/Uninstaller.swift",
                                              encoding: .utf8)) ?? ""
         expect(!uninstallerSource.isEmpty,
                "uninstaller entry point reads back for the sleep restore check")
@@ -26085,7 +26086,7 @@ struct MetricsTests {
         // `.partial` store's dropped entries still own files in that
         // directory, and the blob it kept still points at them.
         let restoreItemsBody = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/Services/Shelf/ShelfService.swift",
+            contentsOfFile: "Sources/Sundry/Services/Shelf/ShelfService.swift",
             encoding: .utf8)) ?? "")
             .components(separatedBy: "private func restoreItems()")
             .dropFirst().first?
@@ -26162,8 +26163,8 @@ struct MetricsTests {
         }
 
         // MARK: A sleeping clock
-        for shareService in ["Sources/Vorssaint/Services/QuickTools/ScreenshotShareService.swift",
-                             "Sources/Vorssaint/Services/Recorder/RecordingShareService.swift"] {
+        for shareService in ["Sources/Sundry/Services/QuickTools/ScreenshotShareService.swift",
+                             "Sources/Sundry/Services/Recorder/RecordingShareService.swift"] {
             let shareCode = ((try? String(contentsOfFile: shareService, encoding: .utf8)) ?? "")
                 .components(separatedBy: "\n")
                 .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -26179,7 +26180,7 @@ struct MetricsTests {
         // the label's cell adds unaccounted for -- the labels have to be the
         // ones asked.
         let quitHUDSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/QuitProtection/QuitProtectionHUD.swift",
+            contentsOfFile: "Sources/Sundry/UI/QuitProtection/QuitProtectionHUD.swift",
             encoding: .utf8)) ?? ""
         expect(quitHUDSource.count > 1_000,
                "the quit protection HUD source is readable (\(quitHUDSource.count) bytes)")
@@ -26215,7 +26216,7 @@ struct MetricsTests {
                                                    excludedVolumes: ["1234-5678-abcd"]),
                "an excluded volume UUID is honoured only when the caller hands the UUID over")
         let diskExclusionsListCode = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/DiskExclusionsList.swift",
+            contentsOfFile: "Sources/Sundry/UI/Settings/DiskExclusionsList.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
             .joined(separator: "\n")
@@ -26245,7 +26246,7 @@ struct MetricsTests {
 
         func fixture(_ check: (URL, UserDefaults, inout ScratchpadStore) throws -> Void) {
             let directory = manager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-            let suite = "com.vorssaint.tests.scratchpad.\(UUID().uuidString)"
+            let suite = "com.sundry.tests.scratchpad.\(UUID().uuidString)"
             let defaults = UserDefaults(suiteName: suite)!
             defer {
                 try? manager.removeItem(at: directory)

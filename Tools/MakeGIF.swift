@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Modified 2026 by the Sundry project, a fork of vorssaint/vorssaint-utils.
 
 // Assembles a folder of PNG frames into the animated GIF used by the release
 // tour. Consecutive identical frames collapse into one longer beat, so a hold

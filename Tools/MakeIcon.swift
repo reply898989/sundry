@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Modified 2026 by the Sundry project, a fork of vorssaint/vorssaint-utils.
 
 // Generates all icon assets:
 // - the app iconset and .icns from the exported Default rendition of the
@@ -114,17 +115,20 @@ func renderAppIcon(px: Int) -> Data? {
 
 // MARK: - Menu bar glyph (template)
 
-// The mark is ~1.97:1, so fitting it into a fixed box made the width the
-// limiting side and left the height unused, rendering it far shorter than the
-// menu bar icons around it. Size from the height and let the width follow.
-let menuBarGlyphHeight: CGFloat = 12.5
-// Centered geometrically the mark reads high, since the thin ring tails carry
-// the bounding box below the planet body. Drop it onto the same visual floor
-// as its neighbours.
-let menuBarGlyphDrop: CGFloat = 1
+// The mark is close to square, so height and width constrain it about equally.
+// Size from the height and let the width follow, which keeps this independent
+// of the mark's aspect if it is ever redrawn.
+//
+// Upstream used 12.5 here because its mark was ~1.97:1 and sizing it any taller
+// pushed it wider than the canvas. The drawer stack has no such limit, so it
+// can stand at the ~15 pt the surrounding menu bar icons use.
+let menuBarGlyphHeight: CGFloat = 15
+// The drawer stack is symmetric about its middle row, so it needs none of the
+// optical drop the old ringed mark did.
+let menuBarGlyphDrop: CGFloat = 0
 // Taller than the mark needs: the same canvas holds the compact Keep Awake
 // symbols. Keep in sync with BlackHoleGlyph.pointSize in
-// Sources/Vorssaint/App/StatusItemController.swift; `--selftest` enforces it.
+// Sources/Sundry/App/StatusItemController.swift; `--selftest` enforces it.
 let menuBarCanvas = (width: 26, height: 20)
 
 func renderMenuBarIcon(scale: Int) -> Data? {
