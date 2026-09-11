@@ -9,6 +9,9 @@ enum AppInfo {
     static let name = "Sundry"
     static let copyright = "© 2026 Sundry · a GPL-3.0 fork of Vorssaint"
     static let repositoryURL = URL(string: "https://github.com/reply898989/sundry")!
+    /// Where an unsigned build sends someone who asks it to update: it cannot
+    /// verify a download, so the browser takes over. See UpdateService.
+    static let releasesURL = URL(string: "https://github.com/reply898989/sundry/releases/latest")!
 
     /// Community and funding destinations. They stay `nil` until this fork owns
     /// the accounts behind them: every button that opens one is hidden while it

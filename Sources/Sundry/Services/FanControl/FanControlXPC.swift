@@ -5,7 +5,27 @@
 import Foundation
 
 enum FanControlIdentifiers {
-    static let teamID = "3D485NHW29"
+    /// The Apple Developer Team ID this build is signed with, and the single
+    /// place it is written down: the XPC code requirements below and the
+    /// self-updater's signature check (UpdateInstallerSupport) both read it.
+    ///
+    /// Empty on purpose. Upstream hard-coded its own team here, which a fork
+    /// must not inherit: their trademark terms require a fork to use its own
+    /// signing identity, and keeping theirs would have meant this build only
+    /// trusting a helper — and only accepting an update — signed by *them*.
+    ///
+    /// Leaving it empty makes both requirements unsatisfiable, which fails
+    /// closed: the privileged helper refuses the connection (Settings shows
+    /// the "helper unavailable" notice) and the self-updater declines to
+    /// install rather than running something it cannot authenticate. Put your
+    /// own Team ID here once you sign releases with a Developer ID, and both
+    /// come back on. See docs/RELEASING.md.
+    static let teamID = ""
+
+    /// Whether this build can verify Developer ID signatures at all: false in
+    /// an unsigned or ad-hoc-signed build, where there is no certificate to
+    /// pin and the privileged features stay off.
+    static var hasDeveloperIDSigning: Bool { !teamID.isEmpty }
 
     #if SUNDRY_DEVELOPMENT
     static let appBundleID = "com.sundry.utils.dev"
@@ -16,10 +36,17 @@ enum FanControlIdentifiers {
     static let helperID = "\(appBundleID).fan-control"
     static let plistName = "\(helperID).plist"
 
-    static let appCodeRequirement =
-        "anchor apple generic and certificate leaf[subject.OU] = \"\(teamID)\" and identifier \"\(appBundleID)\""
-    static let helperCodeRequirement =
-        "anchor apple generic and certificate leaf[subject.OU] = \"\(teamID)\" and identifier \"\(helperID)\""
+    static let appCodeRequirement = codeRequirement(pinning: appBundleID)
+    static let helperCodeRequirement = codeRequirement(pinning: helperID)
+
+    /// Deliberately still emits the certificate clause when `teamID` is
+    /// empty, producing a requirement nothing can satisfy. Dropping the
+    /// clause instead would leave a root-privileged listener pinned only to a
+    /// bundle identifier, which any ad-hoc-signed binary can claim.
+    private static func codeRequirement(pinning identifier: String) -> String {
+        "anchor apple generic and certificate leaf[subject.OU] = \"\(teamID)\" "
+            + "and identifier \"\(identifier)\""
+    }
 }
 
 @objc protocol FanControlXPCProtocol {

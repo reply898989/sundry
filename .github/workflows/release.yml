@@ -112,7 +112,26 @@ jobs:
           fi
           echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
 
+      # A fork does not necessarily have an Apple Developer ID. When the
+      # signing secrets and SIGNING_TEAM_ID are configured the release is
+      # signed, notarized and verified exactly as before; when they are not,
+      # those steps are skipped and the DMG ships ad-hoc signed, with release
+      # notes that say so rather than claiming a notarization that never ran.
+      - name: Detect signing configuration
+        id: signing
+        env:
+          SIGNING_CERT_P12: ${{ secrets.SIGNING_CERT_P12 }}
+          TEAM_ID: ${{ vars.SIGNING_TEAM_ID }}
+        run: |
+          if [[ -n "$SIGNING_CERT_P12" && -n "$TEAM_ID" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No Developer ID signing configured - publishing an ad-hoc signed build."
+          fi
+
       - name: Set up signing
+        if: steps.signing.outputs.enabled == 'true'
         env:
           REQUIRE_SIGNING: "1"
           SIGNING_CERT_P12: ${{ secrets.SIGNING_CERT_P12 }}
@@ -123,14 +142,18 @@ jobs:
         run: ./build.sh
 
       - name: Verify release signature
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          TEAM_ID: ${{ vars.SIGNING_TEAM_ID }}
         run: |
-          REQUIREMENT='identifier "com.sundry.utils" and anchor apple generic and certificate leaf[subject.OU] = "3D485NHW29"'
+          REQUIREMENT="identifier \"com.sundry.utils\" and anchor apple generic and certificate leaf[subject.OU] = \"$TEAM_ID\""
           codesign --verify --deep --strict -R="$REQUIREMENT" build/stage/Sundry.app
 
       - name: Selftest
         run: ./build/Sundry --selftest
 
       - name: Notarize app
+        if: steps.signing.outputs.enabled == 'true'
         env:
           REQUIRE_NOTARIZATION: "1"
           NOTARY_API_KEY_P8: ${{ secrets.NOTARY_API_KEY_P8 }}
@@ -142,14 +165,18 @@ jobs:
         run: ./Tools/make-dmg.sh
 
       - name: Sign DMG
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          TEAM_ID: ${{ vars.SIGNING_TEAM_ID }}
         run: |
           DMG=$(ls dist/*.dmg | head -1)
           codesign --force --timestamp \
-            --sign 'Developer ID Application: Pedro Gomes (3D485NHW29)' "$DMG"
-          REQUIREMENT='anchor apple generic and certificate leaf[subject.OU] = "3D485NHW29"'
+            --sign "Developer ID Application: $TEAM_ID" "$DMG"
+          REQUIREMENT="anchor apple generic and certificate leaf[subject.OU] = \"$TEAM_ID\""
           codesign --verify --strict -R="$REQUIREMENT" "$DMG"
 
       - name: Notarize DMG
+        if: steps.signing.outputs.enabled == 'true'
         env:
           REQUIRE_NOTARIZATION: "1"
           NOTARY_API_KEY_P8: ${{ secrets.NOTARY_API_KEY_P8 }}
@@ -176,9 +203,12 @@ jobs:
           fi
 
       - name: Verify notarization
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          TEAM_ID: ${{ vars.SIGNING_TEAM_ID }}
         run: |
           DMG=$(ls dist/*.dmg | head -1)
-          DMG_REQUIREMENT='anchor apple generic and certificate leaf[subject.OU] = "3D485NHW29"'
+          DMG_REQUIREMENT="anchor apple generic and certificate leaf[subject.OU] = \"$TEAM_ID\""
           codesign --verify --strict -R="$DMG_REQUIREMENT" "$DMG"
           xcrun stapler validate "$DMG"
           MP=$(mktemp -d)
@@ -190,12 +220,14 @@ jobs:
           hdiutil attach -nobrowse -readonly -mountpoint "$MP" "$DMG"
           spctl -a -t exec -vv "$MP/Sundry.app" 2>&1 | tee /tmp/spctl.txt
           grep -q "source=Notarized Developer ID" /tmp/spctl.txt
-          REQUIREMENT='identifier "com.sundry.utils" and anchor apple generic and certificate leaf[subject.OU] = "3D485NHW29"'
+          REQUIREMENT="identifier \"com.sundry.utils\" and anchor apple generic and certificate leaf[subject.OU] = \"$TEAM_ID\""
           codesign --verify --deep --strict -R="$REQUIREMENT" "$MP/Sundry.app"
           xcrun stapler validate "$MP/Sundry.app"
 
       - name: Release notes from CHANGELOG
         id: notes
+        env:
+          SIGNED: ${{ steps.signing.outputs.enabled }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           NOTES="$(awk -v hdr="## [$VERSION]" 'index($0,hdr)==1{g=1;next} /^## \[/&&g{exit} g{print}' CHANGELOG.md)"
@@ -207,7 +239,15 @@ jobs:
           {
             printf '%s\n' "$NOTES"
             echo ""
-            echo "Signed with an Apple Developer ID and notarized by Apple, so it downloads and opens normally. Requires macOS 14 or later. Open the .dmg below and drag Sundry to Applications."
+            if [[ "$SIGNED" == "true" ]]; then
+              echo "Signed with an Apple Developer ID and notarized by Apple, so it downloads and opens normally. Requires macOS 14 or later. Open the .dmg below and drag Sundry to Applications."
+            else
+              echo "Requires macOS 14 or later (Apple silicon). Open the .dmg below and drag Sundry to Applications."
+              echo ""
+              echo "**This build is not notarized by Apple.** Sundry is an unofficial fork and has no Apple Developer ID, so macOS will refuse to open it on the first try. After dragging it to Applications, right-click Sundry and choose **Open**, then confirm — or run \`xattr -dr com.apple.quarantine /Applications/Sundry.app\`. You only need to do this once."
+              echo ""
+              echo "Because the build is unsigned, the in-app updater cannot verify a download and will send you to this page instead of installing automatically."
+            fi
           } > "$NOTES_FILE"
           {
             echo "file=$NOTES_FILE"

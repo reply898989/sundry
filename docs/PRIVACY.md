@@ -1,6 +1,8 @@
 # Privacy
 
-Sundry is built to be local-first. Core features run on your Mac, and the app has no Sundry account or cloud dashboard. Its Sundry-operated services are limited to temporary screenshot links and feedback you explicitly choose to send.
+Sundry is built to be local-first. Core features run on your Mac, and the app has no Sundry account or cloud dashboard.
+
+**This fork operates no services of its own.** Upstream ran a server for temporary screenshot and recording links and for in-app feedback; Sundry is not connected to it and has not replaced it, so those three features are switched off and upload nothing. Items 5, 6 and 7 below describe what they *would* send if an operator ever configured an endpoint they run, and are kept so that decision stays documented rather than silent.
 
 ## The short version
 
@@ -39,19 +41,19 @@ The Online source also downloads the complete public app catalog from `formulae.
 
 The check runs when you open the list or press Check now, and on a schedule only if you set one. The three source switches under App updates control these connections independently. Turning off the App Store source stops its store and bundle identifier lookups. Turning off the Online source stops both developer feed requests and public catalog requests on subsequent checks.
 
-5. **Temporary screenshot links, only when you choose to create one.** Creating a link sends the rendered PNG and your chosen expiration of 1, 6 or 24 hours to the Sundry service over HTTPS. It does not send your name, account, device identifier or MAC address. On your Mac, the feature keeps only the link, expiration and private deletion token while the link is active, so you can copy it or delete it early. The service holds your public IP address in memory for no more than 24 hours to prevent abuse, while network providers may process normal HTTPS request data under their own policies.
+5. **Temporary screenshot links — disabled in this fork, uploads nothing.** No endpoint is configured, so the feature reports as unavailable and no image leaves your Mac. Were one configured, creating a link would send the rendered PNG and your chosen expiration of 1, 6 or 24 hours to the Sundry service over HTTPS. It does not send your name, account, device identifier or MAC address. On your Mac, the feature keeps only the link, expiration and private deletion token while the link is active, so you can copy it or delete it early. The service holds your public IP address in memory for no more than 24 hours to prevent abuse, while network providers may process normal HTTPS request data under their own policies.
 
 The uploaded PNG is decoded and rebuilt without embedded metadata. The image and its link metadata are permanently deleted when the link expires or you delete it, and the service does not create screenshot backups. Private moderation stores the active link, not another uploaded image, and removes that message when the link ends. Anyone with the link can view, download, save or redistribute the image, and active links are available to the service operator for abuse moderation. Share only with people you trust.
 
-6. **Temporary recording links, only when you choose to create one.** The finished video is compressed on your Mac and sent over HTTPS with the audio you kept and your chosen expiration of 1 or 6 hours. It does not send your name, account or device identifier. On your Mac, the feature keeps only the link, expiration and private deletion token while the link is active. The service temporarily processes your public IP address to prevent abuse, while network providers may process normal HTTPS request data under their own policies.
+6. **Temporary recording links — disabled in this fork, uploads nothing.** No endpoint is configured, so the feature reports as unavailable and no video leaves your Mac. Were one configured, the finished video would be compressed on your Mac and sent over HTTPS with the audio you kept and your chosen expiration of 1 or 6 hours. It does not send your name, account or device identifier. On your Mac, the feature keeps only the link, expiration and private deletion token while the link is active. The service temporarily processes your public IP address to prevent abuse, while network providers may process normal HTTPS request data under their own policies.
 
 The service validates and rebuilds the MP4 without its original metadata. The video and link metadata are permanently deleted when the link expires or you delete it, and the service does not create backups. Anyone with the link can view, download, save or redistribute the video, and active links are available to the service operator for abuse moderation. Share only with people you trust.
 
-7. **Feedback, only when you press Send.** A submission sends the category you choose and the text you type. The optional technical details switch adds only the app version and build, macOS version, Mac model and app language shown in the form. It never includes your name, account, email address, device identifier, logs, screenshots, files or clipboard content. Your public IP address is processed temporarily in memory for rate limiting and is not attached to the feedback.
+7. **In-app feedback — disabled in this fork, sends nothing.** No endpoint is configured, so Send reports as unavailable; use the [issue tracker](https://github.com/reply898989/sundry/issues) instead. Were one configured, a submission would send the category you choose and the text you type. The optional technical details switch adds only the app version and build, macOS version, Mac model and app language shown in the form. It never includes your name, account, email address, device identifier, logs, screenshots, files or clipboard content. Your public IP address is processed temporarily in memory for rate limiting and is not attached to the feedback.
 
 Feedback is delivered to private support channels visible to the service owner. After delivery, the text and any technical details you selected remain there until the service owner deletes them. The temporary delivery copy is then deleted; if delivery never succeeds, that copy is permanently deleted after 7 days. No contact information is sent, so feedback cannot receive a direct reply.
 
-That is the entire list. There are no hidden beacons or background uploads.
+That is the entire list. There are no hidden beacons or background uploads — and in this fork, items 5 to 7 make no connection at all. See [NOTICE.md](../NOTICE.md) for why upstream's endpoints were removed rather than inherited.
 
 ## Changes to this document
 

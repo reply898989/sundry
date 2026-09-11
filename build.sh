@@ -286,6 +286,7 @@ if (( TEST )); then
         Sources/Sundry/Core/PermissionGuideStrings.swift \
         Sources/Sundry/Core/FanControlStrings.swift \
         Sources/Sundry/Services/FanControl/FanControlSupport.swift \
+        Sources/Sundry/Services/FanControl/FanControlXPC.swift \
         Sources/Sundry/Services/Snippets/TextSnippetSupport.swift \
         Sources/Sundry/Services/RadialMenu/RadialMenuSupport.swift \
         Sources/Sundry/Services/QuickTools/ScratchpadSupport.swift \

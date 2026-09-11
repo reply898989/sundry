@@ -112,4 +112,4 @@ body:
     id: installation_method
     attributes:
       label: Installation Method
-      placeholder: Homebrew, DMG, GitHub Release, built from source
+      placeholder: DMG from a GitHub Release, or built from source

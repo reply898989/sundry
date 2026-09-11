@@ -3612,10 +3612,14 @@ struct MetricsTests {
         // decision above is made consciously, never by omission.
         let releasePlist = NSDictionary(contentsOfFile: "Resources/Info.plist")
         let plistVersion = (releasePlist?["CFBundleShortVersionString"] as? String) ?? ""
-        expect(plistVersion == "3.3.5",
+        // This fork versions itself rather than continuing upstream's numbering:
+        // 1.0.0 is Sundry's first release, built from upstream 3.3.5. A welcome
+        // side effect is that both intro pins below stop matching, so neither
+        // upstream-curated screen runs.
+        expect(plistVersion == "1.0.0",
                "bumping the app version requires re-deciding the support prompt pin above")
         let plistBuild = (releasePlist?["CFBundleVersion"] as? String) ?? ""
-        expect(plistBuild == "86",
+        expect(plistBuild == "1",
                "every app version needs its own incremented bundle build")
         expect(SupportUpdateIntroInfo.releaseVersion == "3.3.2",
                "the support prompt remains deliberately pinned to 3.3.2")

@@ -699,6 +699,12 @@ enum UpdateHighlightsInfo {
     /// shows the same tour to whoever skipped it and to nobody who already saw
     /// it; any other version never shows it. Bump deliberately for releases
     /// with headline features worth a tour.
+    ///
+    /// Left at upstream's number on purpose, which makes it inert here: this
+    /// fork ships 1.0.0, nothing matches 3.3.3 or patches it, so the tour —
+    /// curated around upstream's 3.3.3 headline features, not this fork's —
+    /// never runs. Point it at a Sundry version when there is a Sundry tour
+    /// worth showing.
     static let releaseVersion = "3.3.3"
 
     static func shouldShow(appVersion: String, lastSeenVersion: String?) -> Bool {
@@ -722,6 +728,10 @@ enum SupportUpdateIntroInfo {
     /// The single release whose first launch shows the update intro. It used
     /// to track AppInfo.version, which re-showed the ask on every update; now a
     /// release only shows it when this constant is deliberately bumped.
+    ///
+    /// Also inert here, and deliberately so: this screen asks for support and
+    /// a follow, and both of those links are nil in this fork (see AppInfo),
+    /// so there would be nothing behind its buttons.
     static let releaseVersion = "3.3.2"
 
     static func shouldShow(appVersion: String, lastSeenVersion: String?) -> Bool {
