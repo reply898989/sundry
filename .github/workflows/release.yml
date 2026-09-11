@@ -20,8 +20,8 @@ jobs:
       github.repository == 'reply898989/sundry' &&
       github.event_name == 'push' &&
       github.ref_type == 'tag' &&
-      github.actor == 'sundry' &&
-      github.triggering_actor == 'sundry'
+      github.actor == 'reply898989' &&
+      github.triggering_actor == 'reply898989'
     runs-on: macos-26
     timeout-minutes: 30
     permissions:
@@ -77,8 +77,8 @@ jobs:
       github.repository == 'reply898989/sundry' &&
       github.event_name == 'push' &&
       github.ref_type == 'tag' &&
-      github.actor == 'sundry' &&
-      github.triggering_actor == 'sundry'
+      github.actor == 'reply898989' &&
+      github.triggering_actor == 'reply898989'
     runs-on: macos-26
     timeout-minutes: 30
     environment: release-signing
@@ -184,23 +184,12 @@ jobs:
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: ./Tools/notarize.sh dist/*.dmg
 
+      # Upstream shipped a promo video with its 3.1.4 release and this step
+      # attached it. That asset was upstream's, for a version this fork will
+      # never cut, so it is gone; the directory is kept because later steps
+      # glob it.
       - name: Prepare release showcase media
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          mkdir -p dist/showcase
-          if [[ "$VERSION" == "3.1.4" ]]; then
-            ASSET="sundry-3.1.4-showcase-1.mp4"
-            SOURCE="ReleaseAssets/$ASSET"
-            TARGET="dist/showcase/$ASSET"
-            if [[ -f "$SOURCE" ]]; then
-              cp "$SOURCE" "$TARGET"
-            fi
-            if [[ ! -s "$TARGET" ]]; then
-              echo "Missing required showcase media: $TARGET" >&2
-              echo "The app expects https://github.com/reply898989/sundry/releases/download/v3.1.4/$ASSET" >&2
-              exit 1
-            fi
-          fi
+        run: mkdir -p dist/showcase
 
       - name: Verify notarization
         if: steps.signing.outputs.enabled == 'true'
@@ -295,8 +284,8 @@ jobs:
       github.repository == 'reply898989/sundry' &&
       github.event_name == 'push' &&
       github.ref_type == 'tag' &&
-      github.actor == 'sundry' &&
-      github.triggering_actor == 'sundry'
+      github.actor == 'reply898989' &&
+      github.triggering_actor == 'reply898989'
     runs-on: macos-26
     timeout-minutes: 10
     permissions:
