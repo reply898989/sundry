@@ -6,12 +6,13 @@ The permission and uninstall commands below all point at Sundry's bundle identif
 
 ## The app will not open
 
-Official Sundry builds are signed with an Apple Developer ID and notarized, so they open with no security warning.
-
-If you built the app yourself or grabbed an unofficial copy, macOS Gatekeeper may stop it on the first launch. To open it anyway, do one of these.
+**This is expected.** Sundry releases are ad-hoc signed, not notarized, because this fork has no Apple Developer ID — so macOS Gatekeeper stops the app on its first launch. It is not a sign that anything is wrong with the download. To open it, do one of these.
 
 1. Right click, or Control click, Sundry in Applications, choose Open, and confirm.
 2. Or open System Settings, Privacy and Security, find the note about Sundry being blocked, and click Open Anyway.
+3. Or, from Terminal: `xattr -dr com.apple.quarantine /Applications/Sundry.app`
+
+You only have to do this once per installed copy. [docs/RELEASING.md](RELEASING.md) explains the signing situation and what would change with a Developer ID.
 
 Sundry lives in the menu bar, so once it starts, look for its icon up there rather than in the Dock.
 

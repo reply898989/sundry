@@ -208,6 +208,14 @@ final class UpdateService: ObservableObject {
 
     func downloadAndInstall() {
         if AppInfo.isDeveloperBuild { return }  // never replace the local dev build over itself
+        // Without a Developer ID there is no signature to verify the download
+        // against (see FanControlIdentifiers.teamID), and installing an
+        // unauthenticated app over this one is exactly the thing not to do.
+        // Hand the release page to the browser instead of downloading it.
+        guard FanControlIdentifiers.hasDeveloperIDSigning else {
+            NSWorkspace.shared.open(AppInfo.releasesURL)
+            return
+        }
         guard let downloadURL else { return }
         // Pre-flight BEFORE spending the download: a translocated app or one
         // running from a read-only volume (the mounted DMG) can never be

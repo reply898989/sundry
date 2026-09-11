@@ -47,14 +47,23 @@ once (`tccutil reset Accessibility com.sundry.utils.dev`) and grant it
 again. The identity is a local convenience only and never shows up outside
 the keychain.
 
-Official releases work differently. CI signs the app and DMG with an Apple
-**Developer ID**, using credentials isolated in the protected `release-signing`
-environment, then
-**notarizes** and staples them through `Tools/notarize.sh`, with secrets
-`NOTARY_API_KEY_P8`, `NOTARY_KEY_ID` and `NOTARY_ISSUER_ID`, so downloads open
-with no Gatekeeper warning. `build.sh` prefers the Developer ID identity when it
-is present, with the hardened runtime and `Resources/Sundry.entitlements`,
-and falls back to the self signed identity, then to ad hoc.
+Releases can work two ways, and this fork currently uses the second.
+
+*With* an Apple **Developer ID**: CI signs the app and DMG using credentials
+isolated in the protected `release-signing` environment, then **notarizes** and
+staples them through `Tools/notarize.sh`, with secrets `NOTARY_API_KEY_P8`,
+`NOTARY_KEY_ID` and `NOTARY_ISSUER_ID`, so downloads open with no Gatekeeper
+warning. `build.sh` prefers the Developer ID identity when it is present, with
+the hardened runtime and `Resources/Sundry.entitlements`, and falls back to the
+self signed identity, then to ad hoc.
+
+*Without* one — the default here, since this fork has no Apple Developer
+account — the release workflow skips signing and notarization, ships an ad-hoc
+signed DMG, and says so in the release notes. Two features stay off in that
+build because they cannot be made safe without a certificate to pin: Fan
+Control and Battery charge limit both talk to a root helper over XPC, and the
+self-updater will not install an update it cannot authenticate. See
+[docs/RELEASING.md](docs/RELEASING.md) for how to turn signing on.
 
 ## Project layout
 
